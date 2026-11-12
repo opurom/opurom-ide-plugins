@@ -1,0 +1,69 @@
+{
+  "publisher": "opurom",
+  "name": "vscode-opurom",
+  "displayName": "OPUROM",
+  "description": "Syntax, snippets, and compiler diagnostics for OPUROM v0.1.",
+  "version": "0.1.0",
+  "categories": ["Programming Languages", "Snippets"],
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "activationEvents": [
+    "onLanguage:opurom",
+    "onCommand:opurom.compile",
+    "onCommand:opurom.check"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "opurom",
+        "aliases": ["OPUROM", "opurom"],
+        "extensions": [".opu"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "opurom",
+        "scopeName": "source.opurom",
+        "path": "./syntaxes/opurom.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "opurom",
+        "path": "./snippets/opurom.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "opurom.compile",
+        "title": "Compile OPUROM to IR",
+        "category": "OPUROM"
+      },
+      {
+        "command": "opurom.check",
+        "title": "Check OPUROM file",
+        "category": "OPUROM"
+      }
+    ],
+    "configuration": {
+      "title": "OPUROM",
+      "properties": {
+        "opurom.compilerPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path to opuromc. Empty uses ../opurom-lang/target/debug/opuromc."
+        },
+        "opurom.cliPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path to opurom-cli/bin/opurom.mjs. Empty uses opuromc check."
+        }
+      }
+    }
+  }
+}
