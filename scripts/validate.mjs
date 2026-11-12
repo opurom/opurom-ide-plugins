@@ -208,6 +208,8 @@ const manifestOk = Boolean(
   events.includes('onLanguage:opurom') &&
   events.includes('onCommand:opurom.compile') &&
   events.includes('onCommand:opurom.check') &&
+  events.includes('onDebug') &&
+  events.includes('onDebugResolve:opurom') &&
   lang?.id === 'opurom' &&
   lang.extensions?.includes('.opu') &&
   lang.aliases?.length > 0 &&
@@ -226,7 +228,31 @@ const manifestOk = Boolean(
   !pkg.devDependencies &&
   !pkg.scripts?.build
 );
-check(manifestOk, 'package.json contributes fields', 'languages, grammars, snippets, 2 commands, 3 settings');
+check(manifestOk, 'package.json contributes fields', 'languages, grammars, snippets, commands, settings, debug activation');
+const expectedDebug = path.resolve(root, '..', 'opurom-debug', 'bin', 'server.mjs');
+const debuggerEntry = (contributes.debuggers || []).find(entry => entry.type === 'opurom');
+const launchSchema = debuggerEntry?.configurationAttributes?.launch;
+const launchProperties = launchSchema?.properties || {};
+const debuggerOk = Boolean(
+  debuggerEntry?.label &&
+  debuggerEntry.runtime === 'node' &&
+  debuggerEntry.program?.includes('../opurom-debug/bin/server.mjs') &&
+  path.resolve(ext, debuggerEntry.program) === expectedDebug &&
+  debuggerEntry.languages?.includes('opurom') &&
+  !contributes.breakpoints &&
+  launchSchema?.required?.includes('program') &&
+  launchProperties.program?.type === 'string' &&
+  launchProperties.steps?.type === 'array' &&
+  launchProperties.steps?.items?.type === 'string' &&
+  launchProperties.coreBinary?.type === 'string' &&
+  debuggerEntry.initialConfigurations?.some(config =>
+    config.type === 'opurom' &&
+    config.request === 'launch' &&
+    typeof config.program === 'string' &&
+    Array.isArray(config.steps)
+  )
+);
+check(debuggerOk, 'opurom debuggers contribution', 'node adapter, program, steps, launch sample');
 const references = [
   pkg.main,
   contributes.languages[0].configuration,
@@ -310,6 +336,35 @@ check(lspOk, 'extension.js LSP wiring', 'spawn, didOpen/didChange, diagnostics, 
 
 const expectedLsp = path.resolve(root, '..', 'opurom-lsp', 'bin', 'server.mjs');
 const extension = require(extensionPath);
+const debugMarkers = [
+  'registerDebugAdapterDescriptorFactory',
+  'DebugAdapterExecutable',
+  "'--stdio'",
+  'defaultDebugServerPath'
+];
+check(
+  debugMarkers.every(marker => extensionSrc.includes(marker)),
+  'extension.js debug adapter wiring',
+  'descriptor factory, node executable, --stdio'
+);
+class FakeDebugAdapterExecutable {
+  constructor(command, args) {
+    this.command = command;
+    this.args = args;
+  }
+}
+const descriptor = typeof extension.debugAdapterDescriptor === 'function'
+  ? extension.debugAdapterDescriptor({ DebugAdapterExecutable: FakeDebugAdapterExecutable })
+  : null;
+check(
+  extension.defaultDebugServerPath() === expectedDebug &&
+  descriptor?.command === 'node' &&
+  descriptor.args.length === 2 &&
+  descriptor.args[0] === expectedDebug &&
+  descriptor.args[1] === '--stdio',
+  'debug adapter descriptor',
+  'node <server> --stdio'
+);
 check(
   typeof extension.defaultLspServerPath === 'function' &&
   extension.defaultLspServerPath() === expectedLsp,
@@ -319,7 +374,9 @@ check(
 check(
   typeof extension.activate === 'function' &&
   typeof extension.deactivate === 'function' &&
-  typeof extension.parseDiagnostics === 'function',
+  typeof extension.parseDiagnostics === 'function' &&
+  typeof extension.defaultDebugServerPath === 'function' &&
+  typeof extension.debugAdapterDescriptor === 'function',
   'CommonJS exports'
 );
 const sample = [
@@ -353,6 +410,10 @@ const routingOk = extension.defaultCompilerPath() === expectedCompiler &&
   compilerCheck.args.join('|') === 'check|/tmp/counter.opu';
 check(routingOk, 'compiler default and CLI routing');
 
+const readmePaths = ['README.md', 'vscode-opurom/README.md'];
+const readmeText = new Map(readmePaths.map(relativePath =>
+  [relativePath, fs.readFileSync(path.join(root, relativePath), 'utf8')]
+));
 const docPhrases = [
   '~/.vscode/extensions',
   'code --install-extension',
@@ -366,19 +427,52 @@ const docPhrases = [
   'opurom.lspPath',
   'hover',
   'completion',
-  'definition'
+  'definition',
+  'contributes.debuggers',
+  'DAP subset',
+  'no GUI client tested',
+  'no real source breakpoints',
+  'no watch expressions',
+  'no step-in/out',
+  'no multi-thread debugging',
+  'R4+'
 ];
-const docsOk = ['README.md', 'vscode-opurom/README.md'].every(relativePath => {
-  const text = fs.readFileSync(path.join(root, relativePath), 'utf8').toLowerCase();
-  return docPhrases.every(phrase => text.includes(phrase.toLowerCase()));
+const docsOk = readmePaths.every(relativePath => {
+  const text = readmeText.get(relativePath).toLowerCase();
+  return docPhrases.every(phrase => text.includes(phrase.toLowerCase())) &&
+    text.includes('"type": "opurom"') &&
+    text.includes('"program"') &&
+    text.includes('"steps"') &&
+    text.includes('tap 4');
 });
-check(docsOk, 'READMEs', 'install, features, honest status in both files');
-// The READMEs must not claim a debugger or a JetBrains plugin exists.
-const overclaimOk = ['README.md', 'vscode-opurom/README.md'].every(relativePath => {
-  const text = fs.readFileSync(path.join(root, relativePath), 'utf8').toLowerCase();
+check(docsOk, 'READMEs', 'install, features, debugger launch sample, honest status in both files');
+const CJK = /[\u3400-\u9FFF\uF900-\uFAFF\u3000-\u303F\uFF00-\uFFEF]/;
+const englishOk = readmePaths.every(relativePath => !CJK.test(readmeText.get(relativePath)));
+check(englishOk, 'READMEs are English-only', '2 files, no CJK text');
+const honestyOk = readmePaths.every(relativePath => {
+  const text = readmeText.get(relativePath).toLowerCase();
+  return [
+    'dap subset',
+    'no gui client tested',
+    'no real source breakpoints',
+    'no watch expressions',
+    'no step-in/out',
+    'no multi-thread debugging',
+    'r4+',
+    'no jetbrains plugin',
+    'no hot reload'
+  ].every(phrase => text.includes(phrase)) &&
+    !text.includes('there is **no debugger**') &&
+    !text.includes('debugger is included') &&
+    !text.includes('jetbrains plugin ships');
+});
+check(honestyOk, 'English-only README honesty', 'DAP subset, GUI client, source breakpoints, watches, stepping, threads');
+// The READMEs must not claim a GUI debugger or a JetBrains plugin exists.
+const overclaimOk = readmePaths.every(relativePath => {
+  const text = readmeText.get(relativePath).toLowerCase();
   return !text.includes('jetbrains plugin ships') && !text.includes('debugger is included');
 });
-check(overclaimOk, 'READMEs do not overclaim', 'no JetBrains plugin, no bundled debugger');
+check(overclaimOk, 'READMEs do not overclaim', 'no JetBrains plugin, no bundled GUI debug client');
 const ignorePatterns = ['node_modules/', '.DS_Store', '*.vsix'];
 const ignoreOk = ['.gitignore', 'vscode-opurom/.vscodeignore'].every(relativePath => {
   const text = fs.readFileSync(path.join(root, relativePath), 'utf8');

@@ -2,16 +2,18 @@
   "publisher": "opurom",
   "name": "vscode-opurom",
   "displayName": "OPUROM",
-  "description": "Syntax, snippets, and compiler diagnostics for OPUROM v0.1.",
+  "description": "Syntax, snippets, compiler diagnostics, and IR state debugging for OPUROM v0.1.",
   "version": "0.1.0",
-  "categories": ["Programming Languages", "Snippets"],
+  "categories": ["Programming Languages", "Snippets", "Debuggers"],
   "engines": {
     "vscode": "^1.75.0"
   },
   "activationEvents": [
     "onLanguage:opurom",
     "onCommand:opurom.compile",
-    "onCommand:opurom.check"
+    "onCommand:opurom.check",
+    "onDebug",
+    "onDebugResolve:opurom"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -46,6 +48,45 @@
         "command": "opurom.check",
         "title": "Check OPUROM file",
         "category": "OPUROM"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "opurom",
+        "label": "OPUROM IR",
+        "program": "../../opurom-debug/bin/server.mjs",
+        "runtime": "node",
+        "languages": ["opurom"],
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to an OPUROM IR v0.1 JSON file."
+              },
+              "steps": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": [],
+                "description": "Core stdin commands such as tap and input."
+              },
+              "coreBinary": {
+                "type": "string",
+                "description": "Optional path to the opurom-core executable."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "opurom",
+            "request": "launch",
+            "name": "Debug OPUROM IR",
+            "program": "${workspaceFolder}/counter.opuir.json",
+            "steps": ["tap 4", "tap 4", "tap 4"]
+          }
+        ]
       }
     ],
     "configuration": {

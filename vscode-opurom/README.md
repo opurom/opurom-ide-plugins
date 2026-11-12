@@ -1,6 +1,6 @@
 # OPUROM for VS Code
 
-Loadable, zero-build-step VS Code extension for OPUROM Lang. Everything needed at runtime is in this folder: a CommonJS `extension.js`, a zero-dependency `lsp-client.js`, JSON contributions, and no npm packages.
+Loadable, zero-build-step VS Code extension for OPUROM Lang. Everything needed at runtime is in this folder: a CommonJS `extension.js`, a zero-dependency `lsp-client.js`, JSON contributions, a `contributes.debuggers` entry, and no npm packages. The debug adapter itself lives in the sibling `opurom-debug` repository.
 
 ## Install
 
@@ -23,7 +23,7 @@ If you separately package a VSIX, install it with:
 code --install-extension /absolute/path/to/vscode-opurom-0.1.0.vsix
 ```
 
-No VSIX is included here. Build `opurom-lang` with `cargo build`, or set `opurom.compilerPath` to an existing `opuromc`.
+No VSIX is included here. Build `opurom-lang` with `cargo build`, or set `opurom.compilerPath` to an existing `opuromc`. Check out the sibling `opurom-lsp`, `opurom-debug`, and `opurom-core` repositories for the optional language server and debugger.
 
 ## Features
 
@@ -33,15 +33,16 @@ No VSIX is included here. Build `opurom-lang` with `cargo build`, or set `opurom
 - `opurom.compile` runs `opuromc compile <src> -o <name>.opuir.json`.
 - `opurom.check` runs `opuromc check <src>`; if `opurom.cliPath` is set, it runs `node <cliPath> check <src>` instead.
 - Raw compiler stdout/stderr appears in the **OPUROM** output channel. `path:line:col: error: message` and warning lines become `vscode.Diagnostic` entries in a `DiagnosticCollection` (Problems panel). Success shows an information message.
+- A DAP subset debugger descriptor launches `node ../opurom-debug/bin/server.mjs --stdio`. Launch attributes are `program`, `steps`, and optional `coreBinary`. Conditions inspect real kernel state after each command.
 
 ## Language server
 
-The extension starts the OPUROM language server (`opurom-lsp`, a separate repository) itself. It spawns `node <server> --stdio`, speaks the LSP JSON-RPC framing over stdio and needs no npm packages and no manual wiring.
+The extension starts the OPUROM language server (`opurom-lsp`, a separate repository) itself. It spawns `node <server> --stdio`, speaks LSP JSON-RPC framing over stdio and needs no npm packages and no manual wiring.
 
-- **Diagnostics** — the server writes the buffer to a temporary `.opu` file, runs `opuromc check` and publishes the result. Published diagnostics land in the same Problems panel as the manual commands.
-- **Hover** — the type and initializer of a `state`, the fields of a `model`, the props of a node kind.
-- **Completion** — the 24 node kinds, keywords, canonical props, API verbs and the declared states.
-- **Definition** — jumps to the `state` or `model` declaration in the same file.
+- **Diagnostics**: the server writes the buffer to a temporary `.opu` file, runs `opuromc check` and publishes the result. Published diagnostics land in the same Problems panel as the manual commands.
+- **Hover**: the type and initializer of a `state`, the fields of a `model`, the props of a node kind.
+- **Completion**: the 24 node kinds, keywords, canonical props, API verbs and the declared states. Autocomplete comes from this completion provider.
+- **Definition**: jumps to the `state` or `model` declaration in the same file.
 
 The server is configured with the `opurom.lspPath` setting. When the server file is missing the extension logs a hint in the output channel and the manual commands keep working.
 
@@ -53,14 +54,36 @@ Settings:
 | `opurom.cliPath` | empty | Absolute path to `opurom-cli/bin/opurom.mjs`; empty uses `opuromc check`. |
 | `opurom.lspPath` | `../../opurom-lsp/bin/server.mjs` | Absolute path to the language server entry point; empty uses the sibling default. |
 
+## Sample debug launch configuration
+
+Add this to `.vscode/launch.json` after compiling an IR file:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "opurom",
+      "request": "launch",
+      "name": "Debug Counter IR",
+      "program": "${workspaceFolder}/counter.opuir.json",
+      "steps": ["tap 4", "tap 4", "tap 4"]
+    }
+  ]
+}
+```
+
+A state breakpoint such as `count == 2` stops after the second tap. The adapter exposes live kernel state through `variables`; the `source.path` in a breakpoint request only identifies the breakpoint set.
+
 Validate from the repository root:
 
 ```sh
-node ../scripts/validate.mjs
+node scripts/validate.mjs
+node --test
 ```
 
-## Honest status (round 2)
+## Honest status (round 3)
 
-Syntax highlighting and compile/check diagnostics work in this round, and so does the language server: the LSP client starts, the server answers, and published diagnostics reach the Problems panel. The server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
+Syntax highlighting and compile/check diagnostics work in this round, and so does the language server: the LSP client starts, the server answers, and published diagnostics reach the Problems panel. The LSP server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
 
-There is **no debugger**: no debug adapter protocol (DAP) implementation and no launch configuration is shipped. There is no JetBrains plugin, no formatting, no rename, no references, no code actions and no semantic tokens — those are later rounds. There is no hot reload integration yet. The manual compile/check commands still need the sibling `opuromc` binary, and the language server needs the sibling `opurom-lsp` checkout; when either is missing, the extension shows a friendly missing-tool message instead of crashing.
+The debugger is a DAP subset contribution backed by the sibling `opurom-debug` adapter; its framed protocol and kernel integration are tested there. No GUI client tested. There are no real source breakpoints, no watch expressions, no step-in/out, and no multi-thread debugging; those are R4+. There is no JetBrains plugin, no formatting, no rename, no references, no code actions and no semantic tokens - those are later rounds. There is no hot reload integration yet. The manual compile/check commands still need the sibling `opuromc` binary, the language server needs the sibling `opurom-lsp` checkout, and the debugger needs the sibling `opurom-debug` and `opurom-core` checkouts; when a tool is missing, the extension shows a friendly missing-tool message instead of crashing.

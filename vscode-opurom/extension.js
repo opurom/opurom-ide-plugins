@@ -33,6 +33,15 @@ function defaultLspServerPath() {
   return defaultLspPath();
 }
 
+function defaultDebugServerPath() {
+  return path.resolve(__dirname, '..', '..', 'opurom-debug', 'bin', 'server.mjs');
+}
+
+// The descriptor factory adds --stdio to the sibling adapter launch command.
+function debugAdapterDescriptor(vscode) {
+  return new vscode.DebugAdapterExecutable('node', [defaultDebugServerPath(), '--stdio']);
+}
+
 function isMissingExecutable(executable) {
   const looksLikePath = path.isAbsolute(executable) || executable.includes('/') || executable.includes('\\');
   return looksLikePath && !fs.existsSync(executable);
@@ -260,6 +269,16 @@ function activate(context) {
     vscode.commands.registerCommand('opurom.compile', () => run(vscode, output, diagnostics, 'compile')),
     vscode.commands.registerCommand('opurom.check', () => run(vscode, output, diagnostics, 'check'))
   );
+  const debugServer = defaultDebugServerPath();
+  if (!fs.existsSync(debugServer)) {
+    output.appendLine(`OPUROM debug adapter not found at ${debugServer}.`);
+    output.appendLine('Check out the sibling opurom-debug repository to enable debugging.');
+  }
+  context.subscriptions.push(
+    vscode.debug.registerDebugAdapterDescriptorFactory('opurom', {
+      createDebugAdapterDescriptor: () => debugAdapterDescriptor(vscode)
+    })
+  );
   languageServer = startLanguageServer(vscode, context, output, diagnostics);
 }
 
@@ -276,5 +295,7 @@ module.exports = {
   parseDiagnostics,
   defaultCompilerPath,
   defaultLspServerPath,
+  defaultDebugServerPath,
+  debugAdapterDescriptor,
   toolFor
 };
