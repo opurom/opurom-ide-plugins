@@ -18,7 +18,7 @@
     "body": [
       "Column(gap: ${1:8}, padding: ${2:16}, align: ${3:center}) {",
       "\tText(\"${4:Hello, OPUROM}\", size: ${5:24})",
-      "}",
+      "\t}",
       "$0"
     ],
     "description": "Insert a Column containing one Text node"
@@ -32,5 +32,43 @@
     "prefix": "opurom-input-bind",
     "body": ["Input(placeholder: \"${1:Your name}\", bind: ${2:name})"],
     "description": "Insert an Input bound to a string state"
+  },
+  "Full-stack model and api": {
+    "prefix": "opurom-fullstack",
+    "body": [
+      "app ${1:TodoApp} {",
+      "\tmodel ${2:Todo} {",
+      "\t\t${3:id}: int primary",
+      "\t\t${4:title}: string",
+      "\t\t${5:done}: bool = false",
+      "\t}",
+      "",
+      "\tapi \"${6:/todos}\" {",
+      "\t\tlist ${2:Todo}",
+      "\t\tcreate ${2:Todo}",
+      "\t}",
+      "",
+      "\tapi \"${6:/todos}/:id\" {",
+      "\t\tget ${2:Todo}",
+      "\t\tupdate ${2:Todo}",
+      "\t\tdelete ${2:Todo}",
+      "\t}",
+      "",
+      "\tstate ${7:remaining} = 0",
+      "\tColumn(p: 16) {",
+      "\t\tText(\"Remaining: {${7:remaining}}\")",
+      "\t}",
+      "}",
+      "$0"
+    ],
+    "description": "Insert an app with a model, two api blocks and a state"
+  },
+  "Theme block": {
+    "prefix": "opurom-theme",
+    "body": [
+      "theme { mode: ${1|dark,light|}, accent: \"${2:#FF4D6D}\", radius: ${3:8} }",
+      "$0"
+    ],
+    "description": "Insert a theme block with mode, accent and radius"
   }
 }

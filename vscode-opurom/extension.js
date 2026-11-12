@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { LspClient, defaultLspPath } = require('./lsp-client');
 
 const DIAGNOSTIC_RE = /^(.+?):(\d+):(\d+):\s*(error|warning):\s*(.+)$/;
 
@@ -24,6 +25,12 @@ function parseDiagnostics(text) {
 
 function defaultCompilerPath() {
   return path.resolve(__dirname, '..', '..', 'opurom-lang', 'target', 'debug', 'opuromc');
+}
+
+// The language server lives in its own repository; the sibling path is the
+// default and the `opurom.lspPath` setting overrides it.
+function defaultLspServerPath() {
+  return defaultLspPath();
 }
 
 function isMissingExecutable(executable) {
@@ -140,6 +147,109 @@ async function run(vscode, output, diagnostics, mode) {
   );
 }
 
+// Holds the running language server for the lifetime of the extension.
+let languageServer = null;
+
+function startLanguageServer(vscode, context, output, diagnostics) {
+  const config = vscode.workspace.getConfiguration('opurom');
+  const configured = String(config.get('lspPath') || '').trim();
+  const serverPath = configured || defaultLspServerPath();
+  if (!fs.existsSync(serverPath)) {
+    output.appendLine(`OPUROM language server not found at ${serverPath}.`);
+    output.appendLine('Set opurom.lspPath to the opurom-lsp/bin/server.mjs file to enable it.');
+    return null;
+  }
+
+  const client = new LspClient(serverPath, {
+    onDiagnostics: params => {
+      const uri = vscode.Uri.parse(params.uri);
+      const list = (params.diagnostics || []).map(item => {
+        const start = item.range?.start || { line: 0, character: 0 };
+        const end = item.range?.end || { line: start.line, character: start.character + 1 };
+        const range = new vscode.Range(
+          start.line, start.character, end.line, end.character
+        );
+        const severity = item.severity === 2
+          ? vscode.DiagnosticSeverity.Warning
+          : vscode.DiagnosticSeverity.Error;
+        const diagnostic = new vscode.Diagnostic(range, item.message, severity);
+        diagnostic.source = 'opurom-lsp';
+        return diagnostic;
+      });
+      diagnostics.set(uri, list);
+    },
+    onMessage: event => {
+      if (event.kind === 'stderr') {
+        output.appendLine(String(event.text).trimEnd());
+        return;
+      }
+      if (event.kind === 'error') {
+        output.appendLine(`Language server error: ${event.text}`);
+        return;
+      }
+      const message = event.message;
+      if (message && message.method === 'window/showMessage') {
+        const params = message.params || {};
+        output.appendLine(`Language server: ${params.message}`);
+        if (params.type === 2) vscode.window.showWarningMessage(params.message);
+      }
+    }
+  });
+
+  client.start();
+  client.request('initialize', {
+    processId: process.pid,
+    rootUri: vscode.workspace.workspaceFolders?.[0]?.uri.toString() || null,
+    capabilities: {}
+  });
+  client.notify('initialized', {});
+  output.appendLine(`OPUROM language server started: ${serverPath}`);
+
+  const isOpurom = document => document.languageId === 'opurom';
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenTextDocument(document => {
+      if (!isOpurom(document)) return;
+      client.notify('textDocument/didOpen', {
+        textDocument: {
+          uri: document.uri.toString(),
+          languageId: document.languageId,
+          version: document.version,
+          text: document.getText()
+        }
+      });
+    }),
+    vscode.workspace.onDidChangeTextDocument(event => {
+      if (!isOpurom(event.document)) return;
+      client.notify('textDocument/didChange', {
+        textDocument: { uri: event.document.uri.toString(), version: event.document.version },
+        contentChanges: [{ text: event.document.getText() }]
+      });
+    }),
+    vscode.workspace.onDidCloseTextDocument(document => {
+      if (!isOpurom(document)) return;
+      client.notify('textDocument/didClose', {
+        textDocument: { uri: document.uri.toString() }
+      });
+    }),
+    { dispose: () => client.stop() }
+  );
+
+  // Documents already open when the extension activates are sent once.
+  for (const document of vscode.workspace.textDocuments) {
+    if (!isOpurom(document)) continue;
+    client.notify('textDocument/didOpen', {
+      textDocument: {
+        uri: document.uri.toString(),
+        languageId: document.languageId,
+        version: document.version,
+        text: document.getText()
+      }
+    });
+  }
+
+  return client;
+}
+
 function activate(context) {
   const vscode = require('vscode');
   const output = vscode.window.createOutputChannel('OPUROM');
@@ -150,8 +260,21 @@ function activate(context) {
     vscode.commands.registerCommand('opurom.compile', () => run(vscode, output, diagnostics, 'compile')),
     vscode.commands.registerCommand('opurom.check', () => run(vscode, output, diagnostics, 'check'))
   );
+  languageServer = startLanguageServer(vscode, context, output, diagnostics);
 }
 
-function deactivate() {}
+function deactivate() {
+  if (languageServer) {
+    languageServer.stop();
+    languageServer = null;
+  }
+}
 
-module.exports = { activate, deactivate, parseDiagnostics, defaultCompilerPath, toolFor };
+module.exports = {
+  activate,
+  deactivate,
+  parseDiagnostics,
+  defaultCompilerPath,
+  defaultLspServerPath,
+  toolFor
+};

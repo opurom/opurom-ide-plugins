@@ -36,9 +36,9 @@ function compileRegex(pattern, label) {
   }
 }
 
-function collect(node, scopes, regexes, includes) {
+function collect(node, scopes, regexes, includes, scoped) {
   if (Array.isArray(node)) {
-    for (const value of node) collect(value, scopes, regexes, includes);
+    for (const value of node) collect(value, scopes, regexes, includes, scoped);
     return;
   }
   if (!node || typeof node !== 'object') return;
@@ -50,9 +50,13 @@ function collect(node, scopes, regexes, includes) {
     }
   }
   for (const key of ['match', 'begin', 'end']) {
-    if (typeof node[key] === 'string') regexes.push(compileRegex(node[key], `grammar ${key}`));
+    if (typeof node[key] === 'string') {
+      const pattern = compileRegex(node[key], `grammar ${key}`);
+      regexes.push(pattern);
+      if (typeof node.name === 'string') scoped.push({ scope: node.name, pattern });
+    }
   }
-  for (const value of Object.values(node)) collect(value, scopes, regexes, includes);
+  for (const value of Object.values(node)) collect(value, scopes, regexes, includes, scoped);
 }
 
 const jsonFiles = walk(root).filter(file => file.endsWith('.json'));
@@ -67,7 +71,8 @@ const pkg = readJson('vscode-opurom/package.json');
 const scopes = new Set();
 const regexes = [];
 const includes = new Set();
-collect(grammar, scopes, regexes, includes);
+const scoped = [];
+collect(grammar, scopes, regexes, includes, scoped);
 check(grammar.scopeName === 'source.opurom' && regexes.length > 0, 'grammar regexes compiled', `${regexes.length} patterns`);
 
 const requiredScopes = [
@@ -112,6 +117,37 @@ const tokenChecks = [
 const uncovered = tokenChecks.filter(([, token]) => !regexes.some(pattern => pattern.test(token)));
 check(uncovered.length === 0, 'grammar token coverage', `${tokenChecks.length} tokens`);
 
+// Round 2 keywords and node kinds must be highlighted as something more
+// specific than a plain identifier.
+const r2Keywords = [
+  'model', 'api', 'theme', 'if', 'for',
+  'list', 'get', 'create', 'update', 'delete', 'primary',
+  'spring', 'ease', 'glass', 'gradient', 'shadow', 'opacity', 'animate'
+];
+const r2NodeKinds = [
+  'Card', 'Divider', 'Icon', 'Badge', 'Progress', 'Switch', 'Slider', 'Checkbox',
+  'Radio', 'Dialog', 'Tabs', 'List', 'Grid', 'Scroll', 'Avatar', 'Spinner'
+];
+const specificPatterns = scoped
+  .filter(entry => entry.scope !== 'variable.other.identifier.opurom')
+  .map(entry => entry.pattern);
+const nodePatterns = scoped
+  .filter(entry => entry.scope.startsWith('support.class.node'))
+  .map(entry => entry.pattern);
+const unmatchedKeywords = r2Keywords.filter(word =>
+  !specificPatterns.some(pattern => pattern.test(word))
+);
+check(unmatchedKeywords.length === 0, 'R2 keyword coverage', `${r2Keywords.length} keywords`);
+const unmatchedKinds = r2NodeKinds.filter(word =>
+  !nodePatterns.some(pattern => pattern.test(word))
+);
+check(unmatchedKinds.length === 0, 'R2 node kind coverage', `${r2NodeKinds.length} kinds`);
+const allKinds = [
+  'Column', 'Row', 'Container', 'Text', 'Button', 'Input', 'Image', 'Spacer', ...r2NodeKinds
+];
+const kindMisses = allKinds.filter(word => !nodePatterns.some(pattern => pattern.test(word)));
+check(kindMisses.length === 0, 'all 24 node kinds highlighted', `${allKinds.length} kinds`);
+
 const stringPatterns = grammar.repository.strings.patterns;
 const interpolation = stringPatterns.find(pattern => pattern.name === 'meta.interpolation.opurom');
 const interpolationOk = Boolean(
@@ -140,10 +176,19 @@ check(languageOk, 'language configuration', 'comments, pairs, brackets, indentat
 
 const snippetEntries = Object.values(snippets);
 const snippetText = JSON.stringify(snippets);
-const snippetOk = snippetEntries.length === 4 &&
+const snippetOk = snippetEntries.length >= 5 &&
   snippetEntries.every(entry => entry.prefix && Array.isArray(entry.body) && entry.description) &&
-  ['opurom-app', 'Column', 'Text', 'Button', '+= 1', 'Input', 'bind:'].every(token => snippetText.includes(token));
+  ['opurom-app', 'Column', 'Text', 'Button', '+= 1', 'Input', 'bind:',
+    'opurom-fullstack', 'model', 'api', 'primary'].every(token => snippetText.includes(token));
 check(snippetOk, 'snippets', `${snippetEntries.length} snippets`);
+const fullstackSnippet = snippetEntries.find(entry => entry.prefix === 'opurom-fullstack');
+const scaffoldOk = Boolean(
+  fullstackSnippet &&
+  fullstackSnippet.body.some(line => line.includes('model ${2:Todo}')) &&
+  fullstackSnippet.body.some(line => line.includes('api "${6:/todos}"')) &&
+  fullstackSnippet.body.some(line => line.includes('list ${2:Todo}'))
+);
+check(scaffoldOk, 'full-stack snippet scaffold', 'model + api + handlers');
 
 const versionParts = String(pkg.version || '').split('.');
 const contributes = pkg.contributes || {};
@@ -176,11 +221,12 @@ const manifestOk = Boolean(
   commandIds.includes('opurom.check') &&
   properties['opurom.compilerPath']?.type === 'string' &&
   properties['opurom.cliPath']?.type === 'string' &&
+  properties['opurom.lspPath']?.type === 'string' &&
   !pkg.dependencies &&
   !pkg.devDependencies &&
   !pkg.scripts?.build
 );
-check(manifestOk, 'package.json contributes fields', 'languages, grammars, snippets, 2 commands, 2 settings');
+check(manifestOk, 'package.json contributes fields', 'languages, grammars, snippets, 2 commands, 3 settings');
 const references = [
   pkg.main,
   contributes.languages[0].configuration,
@@ -227,7 +273,49 @@ check(
 const syntax = spawnSync(process.execPath, ['--check', extensionPath], { encoding: 'utf8' });
 check(syntax.status === 0, 'extension.js syntax (node --check)', syntax.stderr.trim() || 'no syntax errors');
 
+// The zero-dependency LSP client lives next to extension.js.
+const clientPath = path.join(ext, 'lsp-client.js');
+const clientSrc = fs.readFileSync(clientPath, 'utf8');
+const clientSyntax = spawnSync(process.execPath, ['--check', clientPath], { encoding: 'utf8' });
+check(clientSyntax.status === 0, 'lsp-client.js syntax (node --check)', clientSyntax.stderr.trim() || 'no syntax errors');
+const clientCode = [
+  "require('node:child_process')",
+  'spawn(',
+  'Content-Length',
+  'textDocument/publishDiagnostics',
+  "'shutdown'",
+  "'exit'",
+  'JSON.stringify',
+  'JSON.parse'
+];
+const clientOk = clientCode.every(marker => clientSrc.includes(marker)) &&
+  !/require\(['"]vscode-languageserver/.test(clientSrc) &&
+  !clientSrc.includes('require(\'vscode\')');
+check(clientOk, 'lsp-client.js runtime contract', 'spawn, framing, publishDiagnostics, lifecycle');
+
+const lspMarkers = [
+  "require('./lsp-client')",
+  'LspClient',
+  'defaultLspServerPath',
+  "'initialize'",
+  "'textDocument/didOpen'",
+  "'textDocument/didChange'",
+  "'textDocument/didClose'",
+  'onDiagnostics',
+  'onDidChangeTextDocument',
+  'languageServer.stop()'
+];
+const lspOk = lspMarkers.every(marker => extensionSrc.includes(marker));
+check(lspOk, 'extension.js LSP wiring', 'spawn, didOpen/didChange, diagnostics, shutdown');
+
+const expectedLsp = path.resolve(root, '..', 'opurom-lsp', 'bin', 'server.mjs');
 const extension = require(extensionPath);
+check(
+  typeof extension.defaultLspServerPath === 'function' &&
+  extension.defaultLspServerPath() === expectedLsp,
+  'LSP server default path',
+  expectedLsp
+);
 check(
   typeof extension.activate === 'function' &&
   typeof extension.deactivate === 'function' &&
@@ -274,13 +362,23 @@ const docPhrases = [
   'autocomplete',
   'debugger',
   'hot reload',
-  'later rounds'
+  'later rounds',
+  'opurom.lspPath',
+  'hover',
+  'completion',
+  'definition'
 ];
 const docsOk = ['README.md', 'vscode-opurom/README.md'].every(relativePath => {
-  const text = fs.readFileSync(path.join(root, relativePath), 'utf8');
-  return docPhrases.every(phrase => text.includes(phrase));
+  const text = fs.readFileSync(path.join(root, relativePath), 'utf8').toLowerCase();
+  return docPhrases.every(phrase => text.includes(phrase.toLowerCase()));
 });
 check(docsOk, 'READMEs', 'install, features, honest status in both files');
+// The READMEs must not claim a debugger or a JetBrains plugin exists.
+const overclaimOk = ['README.md', 'vscode-opurom/README.md'].every(relativePath => {
+  const text = fs.readFileSync(path.join(root, relativePath), 'utf8').toLowerCase();
+  return !text.includes('jetbrains plugin ships') && !text.includes('debugger is included');
+});
+check(overclaimOk, 'READMEs do not overclaim', 'no JetBrains plugin, no bundled debugger');
 const ignorePatterns = ['node_modules/', '.DS_Store', '*.vsix'];
 const ignoreOk = ['.gitignore', 'vscode-opurom/.vscodeignore'].every(relativePath => {
   const text = fs.readFileSync(path.join(root, relativePath), 'utf8');

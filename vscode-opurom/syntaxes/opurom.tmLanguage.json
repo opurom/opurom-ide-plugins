@@ -6,11 +6,14 @@
     { "include": "#comments" },
     { "include": "#strings" },
     { "include": "#keywords" },
+    { "include": "#api-verbs" },
+    { "include": "#model-modifiers" },
     { "include": "#node-kinds" },
     { "include": "#numbers" },
     { "include": "#booleans" },
     { "include": "#operators" },
     { "include": "#property-names" },
+    { "include": "#effects" },
     { "include": "#identifiers" },
     { "include": "#punctuation" }
   ],
@@ -39,11 +42,19 @@
     },
     "keywords": {
       "name": "keyword.control.opurom",
-      "match": "\\b(?:app|state)\\b"
+      "match": "\\b(?:app|state|model|api|theme|if|for)\\b"
+    },
+    "api-verbs": {
+      "name": "keyword.control.verb.opurom",
+      "match": "\\b(?:list|get|create|update|delete)\\b"
+    },
+    "model-modifiers": {
+      "name": "storage.modifier.opurom",
+      "match": "\\bprimary\\b"
     },
     "node-kinds": {
       "name": "support.class.node.opurom",
-      "match": "\\b(?:Column|Row|Container|Text|Button|Input|Image|Spacer)\\b"
+      "match": "\\b(?:Column|Row|Container|Text|Button|Input|Image|Spacer|Card|Divider|Icon|Badge|Progress|Switch|Slider|Checkbox|Radio|Dialog|Tabs|List|Grid|Scroll|Avatar|Spinner)\\b"
     },
     "numbers": {
       "name": "constant.numeric.opurom",
@@ -60,6 +71,10 @@
     "property-names": {
       "name": "variable.parameter.prop.opurom",
       "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*:)"
+    },
+    "effects": {
+      "name": "support.constant.effect.opurom",
+      "match": "\\b(?:spring|ease|glass|gradient|shadow|opacity|animate)\\b"
     },
     "identifiers": {
       "name": "variable.other.identifier.opurom",
