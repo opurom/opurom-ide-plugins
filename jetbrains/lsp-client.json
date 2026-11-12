@@ -1,0 +1,15 @@
+{
+  "kind": "opurom.jetbrains.lsp-client-configuration-metadata",
+  "description": "LSP configuration metadata only; NOT a running IntelliJ client.",
+  "metadataOnly": true,
+  "runningIntelliJClient": false,
+  "languageId": "opurom",
+  "fileExtensions": [".opu"],
+  "command": "node",
+  "args": ["../../opurom-lsp/bin/server.mjs", "--stdio"],
+  "argsRelativeTo": "jetbrains/",
+  "siblingRepository": "../opurom-lsp",
+  "siblingRepositoryRelativeTo": "repository root",
+  "transport": "stdio",
+  "status": "Runtime client implementation and IntelliJ verification are R5+."
+}

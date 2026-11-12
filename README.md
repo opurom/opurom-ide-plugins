@@ -1,6 +1,6 @@
 # OPUROM IDE Plugins
 
-Independent repository for OPUROM editor tooling. Round 2 ships [vscode-opurom](vscode-opurom/README.md): a loadable, zero-build-step VS Code extension with a built-in language server client. Round 3 adds a `contributes.debuggers` entry and a debug adapter descriptor that launches `node ../opurom-debug/bin/server.mjs --stdio` from the sibling `opurom-debug` repository. There is no bundler, generated code, or npm install step.
+Independent repository for OPUROM editor tooling. Round 2 ships [vscode-opurom](vscode-opurom/README.md): a loadable, zero-build-step VS Code extension with a built-in language server client. Round 3 adds a `contributes.debuggers` entry and a debug adapter descriptor that launches `node ../opurom-debug/bin/server.mjs --stdio` from the sibling `opurom-debug` repository. There is no bundler, generated code, or npm install step. Round 4 adds the [JetBrains metadata](jetbrains/README.md): a standalone TextMate-style grammar subset, LSP client configuration stub and plugin.xml metadata; no compiled or runtime IntelliJ plugin.
 
 ## Install
 
@@ -57,13 +57,20 @@ Verify the project with:
 ```sh
 node scripts/validate.mjs
 node --test
+node jetbrains/validate.mjs
 ```
 
 ## Honest status (round 3)
 
 Syntax highlighting and compile/check diagnostics work in this round, and so does the language server. The LSP client is verified: the server starts, the session is real JSON-RPC, and published diagnostics reach the Problems panel. The LSP server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
 
-The debugger is a DAP subset contribution backed by a separate adapter repository; its framed protocol and kernel integration are tested there. No GUI client tested. There are no real source breakpoints, no watch expressions, no step-in/out, and no multi-thread debugging; those are R4+. There is no JetBrains plugin, no formatting, no rename, no references, no code actions and no semantic tokens - those are later rounds. There is no hot reload integration yet. A live compile/check run requires the sibling compiler binary; the language server requires the sibling `opurom-lsp` checkout; the debugger requires the sibling `opurom-debug` and `opurom-core` checkouts. A missing tool is reported with a friendly message instead of a crash.
+The debugger is a DAP subset contribution backed by a separate adapter repository; its framed protocol and kernel integration are tested there. No GUI client tested. There are no real source breakpoints, no watch expressions, no step-in/out, and no multi-thread debugging; those are R4+. There is no JetBrains plugin binary or runtime integration, no formatting, no rename, no references, no code actions and no semantic tokens - those are later rounds. There is no hot reload integration yet. A live compile/check run requires the sibling compiler binary; the language server requires the sibling `opurom-lsp` checkout; the debugger requires the sibling `opurom-debug` and `opurom-core` checkouts. A missing tool is reported with a friendly message instead of a crash.
+
+## JetBrains metadata (round 4)
+
+[jetbrains/](jetbrains/README.md) contains grammar/config METADATA only. `opurom.tmLanguage.json` is a standalone TextMate-style grammar subset for `.opu` with R4 keywords, async effects, 32 primitive kinds, interpolation, comments, numbers and booleans. `lsp-client.json` records the `opurom` language id, `.opu` extensions, and the sibling `opurom-lsp` stdio server command as configuration metadata; it is NOT a running IntelliJ client. `plugin.xml` is well-formed IntelliJ plugin metadata with id, name, vendor, depends, and language/file type extensions. `validate.mjs` checks JSON, XML, keyword coverage and status text with Node builtins only.
+
+Status: grammar/config METADATA only. NO IntelliJ runtime test, NO compiled plugin, NO JetBrains marketplace publication, NO debugger integration; JetBrains runtime plugin verification remains R5+. The VS Code extension and its DAP subset contribution are unchanged; this subproject has no debugger integration of its own.
 
 ## Scope
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<idea-plugin>
+  <id>opurom.jetbrains.metadata</id>
+  <name>OPUROM JetBrains Metadata</name>
+  <vendor>OPUROM</vendor>
+  <description>The implementationClass values are metadata placeholders; no classes are compiled or shipped. Configuration metadata only; no compiled plugin, no IntelliJ runtime test, no JetBrains Marketplace publication, and no debugger integration. Runtime verification is R5+.</description>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.plugins.textmate</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType
+      name="OPUROM"
+      language="OPUROM"
+      extensions="opu"
+      fieldName="INSTANCE"
+      implementationClass="opurom.jetbrains.metadata.OpuromFileType" />
+    <lang.parserDefinition
+      language="OPUROM"
+      implementationClass="opurom.jetbrains.metadata.OpuromParserDefinition" />
+  </extensions>
+</idea-plugin>
