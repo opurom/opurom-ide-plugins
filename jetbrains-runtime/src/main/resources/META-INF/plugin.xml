@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<idea-plugin>
+  <id>opurom.jetbrains.runtime</id>
+  <name>OPUROM</name>
+  <vendor url="https://github.com/opurom">OPUROM</vendor>
+  <idea-version since-build="233" until-build="243.*"/>
+  <description><![CDATA[Compiled OPUROM language, .opu file type, syntax grammar and stdio LSP client. The grammar resource is textmate/opurom.tmLanguage.json. This archive was NOT loaded inside a running IntelliJ IDE; there is no marketplace publication, no runtime IDE verification and no debugger UI.]]></description>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.lang</depends>
+  <extensionPoints>
+    <extensionPoint name="opuromGrammar" interface="opurom.jetbrains.OpuromGrammar"/>
+    <extensionPoint name="opuromLspClient" interface="opurom.jetbrains.OpuromLspClientProvider"/>
+  </extensionPoints>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType name="OPUROM" language="OPUROM" extensions="opu" implementationClass="opurom.jetbrains.OpuromFileType" fieldName="INSTANCE"/>
+    <lang.syntaxHighlighterFactory language="OPUROM" implementationClass="opurom.jetbrains.OpuromSyntaxHighlighterFactory"/>
+    <postStartupActivity implementation="opurom.jetbrains.OpuromLspStartupActivity"/>
+    <applicationService serviceImplementation="opurom.jetbrains.OpuromLspClientManager"/>
+  </extensions>
+  <extensions defaultExtensionNs="opurom.jetbrains.runtime">
+    <opuromGrammar implementation="opurom.jetbrains.OpuromTextMateGrammar"/>
+    <opuromLspClient implementation="opurom.jetbrains.OpuromLspClientManager"/>
+  </extensions>
+</idea-plugin>

@@ -2,6 +2,8 @@
 
 This directory is grammar/config METADATA only. It is NOT a running IntelliJ client. There is no compiled Java/Kotlin plugin, no Gradle build, no IntelliJ SDK runtime, no plugin verifier run, and no JetBrains Marketplace artifact.
 
+This directory's R4 status remains metadata only: it contains no compiled plugin, has no IntelliJ runtime test, and is not a running IntelliJ client. It declares no debugger integration and no JetBrains marketplace publication; runtime verification for this metadata subproject remains R5+. The separate R9 compiled plugin lives in [../jetbrains-runtime/](../jetbrains-runtime/README.md) and was NOT loaded inside a running IntelliJ IDE.
+
 ## Contents
 
 - [opurom.tmLanguage.json](opurom.tmLanguage.json): a standalone TextMate-style `.opu` grammar subset. It covers `app`, `state`, `model`, `api`, `theme`, `import`, `async`, `await`, `delay`, `fetch`, API verbs, all 32 primitive kinds, strings with `{name}` interpolation, `{{`, `//` comments, numbers, booleans, operators and punctuation.

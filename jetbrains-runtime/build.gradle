@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '1.17.4'
+}
+
+group = 'opurom'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+intellij {
+    version = '2023.3.6'
+    type = 'IC'
+    downloadSources = false
+    instrumentCode = false
+    updateSinceUntilBuild = false
+}
+
+patchPluginXml {
+    sinceBuild = '233'
+    untilBuild = '243.*'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
+
+buildSearchableOptions {
+    enabled = false
+}
+
+tasks.named('buildPlugin') {
+    archiveFileName = 'opurom-jetbrains-0.1.0.zip'
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from('src/main/resources/META-INF/plugin.xml')
+    from('src/main/resources/textmate') {
+        into 'textmate'
+    }
+    from(sourceSets.main.output.classesDirs) {
+        into 'lib'
+    }
+}

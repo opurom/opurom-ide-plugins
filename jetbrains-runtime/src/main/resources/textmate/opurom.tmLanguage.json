@@ -1,0 +1,93 @@
+{
+  "name": "OPUROM (JetBrains runtime)",
+  "scopeName": "source.opurom",
+  "fileTypes": ["opu"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#keywords" },
+    { "include": "#api-verbs" },
+    { "include": "#model-modifiers" },
+    { "include": "#async-effects" },
+    { "include": "#node-kinds" },
+    { "include": "#numbers" },
+    { "include": "#booleans" },
+    { "include": "#operators" },
+    { "include": "#property-names" },
+    { "include": "#effects" },
+    { "include": "#identifiers" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.double-slash.opurom",
+      "match": "//.*$"
+    },
+    "strings": {
+      "name": "string.quoted.double.opurom",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        { "name": "constant.character.escape.opurom", "match": "\\\\." },
+        { "name": "constant.character.escape.opurom", "match": "\\{\\{" },
+        {
+          "name": "meta.interpolation.opurom",
+          "begin": "\\{",
+          "end": "\\}",
+          "patterns": [
+            { "name": "variable.other.interpolation.opurom", "match": "[A-Za-z_][A-Za-z0-9_]*" },
+            { "include": "#punctuation" }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "name": "keyword.control.opurom",
+      "match": "\\b(?:app|state|model|api|theme|import|if|for|async|await)\\b"
+    },
+    "api-verbs": {
+      "name": "keyword.control.verb.opurom",
+      "match": "\\b(?:list|get|create|update|delete)\\b"
+    },
+    "model-modifiers": {
+      "name": "storage.modifier.opurom",
+      "match": "\\bprimary\\b"
+    },
+    "async-effects": {
+      "name": "support.function.async-effect.opurom",
+      "match": "\\b(?:delay|fetch)\\b"
+    },
+    "node-kinds": {
+      "name": "support.class.node.opurom",
+      "match": "\\b(?:Column|Row|Container|Text|Button|Input|Image|Spacer|Card|Divider|Icon|Badge|Progress|Switch|Slider|Checkbox|Radio|Dialog|Tabs|List|Grid|Scroll|Avatar|Spinner|Table|Chart|Calendar|RichText|Player|Map|Menu|Tooltip)\\b"
+    },
+    "numbers": {
+      "name": "constant.numeric.opurom",
+      "match": "-?\\b[0-9]+\\b"
+    },
+    "booleans": {
+      "name": "constant.language.boolean.opurom",
+      "match": "\\b(?:true|false)\\b"
+    },
+    "operators": {
+      "name": "keyword.operator.opurom",
+      "match": "\\+=|-=|=(?!=)|\\.toggle\\(\\)"
+    },
+    "property-names": {
+      "name": "variable.parameter.prop.opurom",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*:)"
+    },
+    "effects": {
+      "name": "support.constant.effect.opurom",
+      "match": "\\b(?:spring|ease|glass|gradient|shadow|opacity|animate)\\b"
+    },
+    "identifiers": {
+      "name": "variable.other.identifier.opurom",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+    },
+    "punctuation": {
+      "name": "punctuation.opurom",
+      "match": "[{}(),;:]"
+    }
+  }
+}

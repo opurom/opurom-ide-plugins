@@ -2,10 +2,12 @@
   "name": "opurom-ide-plugins",
   "version": "0.1.0",
   "private": true,
-  "description": "OPUROM editor tooling: VS Code extension, grammar, snippets and a zero-dependency LSP client.",
+  "description": "OPUROM editor tooling: VS Code extension, compiled JetBrains plugin, grammar, snippets and a zero-dependency LSP client.",
   "scripts": {
     "test": "node --test",
-    "validate": "node scripts/validate.mjs"
+    "validate": "node scripts/validate.mjs",
+    "verify:jetbrains": "node jetbrains-runtime/verify.mjs",
+    "build:jetbrains": "node jetbrains-runtime/build.mjs"
   },
   "engines": {
     "node": ">=20"
