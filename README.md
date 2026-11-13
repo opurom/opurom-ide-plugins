@@ -62,7 +62,7 @@ node --test
 node jetbrains/validate.mjs
 ```
 
-`scripts/validate.mjs` cross-checks every contributed command id against its registered handler and activation event. `test/extension-commands.test.mjs` covers the command declarations and behavior, `test/lsp-client.test.mjs` covers the client restart lifecycle, and `test/grammar-tokenization.test.mjs` covers action verbs, attribute names and the shared conditional and theme snippet bodies.
+`scripts/validate.mjs` cross-checks every contributed command id against its registered handler and activation event, and cross-checks all nine snippet bodies against their JetBrains live templates. `test/extension-commands.test.mjs` covers the command declarations and behavior, `test/lsp-client.test.mjs` covers the client restart lifecycle, and `test/grammar-tokenization.test.mjs` covers action verbs, attribute names, the shared conditional and theme snippet bodies and the snippet-to-live-template parity.
 
 ## Status
 
@@ -72,7 +72,7 @@ The debugger is a DAP subset contribution backed by a separate adapter repositor
 
 ## JetBrains metadata
 
-[jetbrains/](jetbrains/README.md) contains grammar/config METADATA only. `opurom.tmLanguage.json` is a standalone TextMate-style grammar subset for `.opu` with the language keywords, the action verbs and `animate`/`fontScale` attribute names, async effects, 32 primitive kinds, interpolation, comments, numbers and booleans. `lsp-client.json` records the `opurom` language id, `.opu` extensions, and the sibling `opurom-lsp` stdio server command as configuration metadata; it is NOT a running IntelliJ client. `live-templates.xml` records the `if`, `ifelse` and `theme` bodies as conditional rendering metadata. `plugin.xml` is well-formed IntelliJ plugin metadata with id, name, vendor, depends, and language/file type extensions. `validate.mjs` checks JSON, XML, keyword coverage and status text with Node builtins only.
+[jetbrains/](jetbrains/README.md) contains grammar/config METADATA only. `opurom.tmLanguage.json` is a standalone TextMate-style grammar subset for `.opu` with the language keywords, the action verbs and `animate`/`fontScale` attribute names, async effects, 32 primitive kinds, interpolation, comments, numbers and booleans. `lsp-client.json` records the `opurom` language id, `.opu` extensions, and the sibling `opurom-lsp` stdio server command as configuration metadata; it is NOT a running IntelliJ client. `live-templates.xml` records the same nine bodies as live-template metadata: `if`, `ifelse`, `theme`, `opurom-app`, `opurom-column-text`, `opurom-button-inc`, `opurom-input-bind`, `opurom-fullstack` and `opurom-theme`, each mirroring its VS Code snippet. `plugin.xml` is well-formed IntelliJ plugin metadata with id, name, vendor, depends, and language/file type extensions. `validate.mjs` checks JSON, XML, keyword coverage and status text with Node builtins only.
 
 The metadata directory holds configuration only. The compiled plugin and its IntelliJ runtime verification live in the [runtime subproject](jetbrains-runtime/README.md). The DAP subset contribution is unchanged; the metadata directory has no debugger integration of its own.
 

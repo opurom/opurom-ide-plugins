@@ -243,6 +243,26 @@ test('conditional snippets include tab stops, both branches and the default them
   assert.equal(canonicalSnippets[2], 'theme { accent: "#097FEB", radius: 12 }');
 });
 
+test('every VS Code snippet has a JetBrains live template with the same body', () => {
+  const prefixes = ['if', 'ifelse', 'theme', 'opurom-app', 'opurom-column-text',
+    'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme'];
+  for (const prefix of prefixes) {
+    const entry = Object.values(vscodeSnippets).find(snippet => snippet.prefix === prefix);
+    assert.ok(entry, `${prefix} VS Code snippet exists`);
+    const template = liveTemplates.get(prefix);
+    assert.ok(template, `${prefix} live template exists`);
+    assert.equal(expandJetBrains(template), expandVsCode(entry.body), `${prefix} body`);
+  }
+});
+
+test('snippet expansion resolves choice placeholders to their first option', () => {
+  assert.equal(expandVsCode(['theme { mode: ${1|dark,light|} }']), 'theme { mode: dark }');
+  assert.equal(expandVsCode(['theme { accent: "${1|#FF4D6D,#097FEB|}", radius: 12 }']),
+    'theme { accent: "#FF4D6D", radius: 12 }');
+  assert.equal(expandVsCode(['app ${1:Counter} {', '\tstate ${2:count} = ${3:0}', '}']),
+    ['app Counter {', '\tstate count = 0', '}'].join('\n'));
+});
+
 for (const [label, relativePath] of grammars) {
   test(`${label} grammar tokenizes conditional and theme snippets`, () => {
     const tokens = tokenize(load(relativePath), conditionalSource);

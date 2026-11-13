@@ -7,7 +7,7 @@
       <option name="OPUROM" value="true" />
     </context>
   </template>
-  <template name="ifelse" value="if ($STATE$) {&#10;&#9;$THEN$&#10;} else {&#10;&#9;$ELSE$&#10;}$END$" description="Insert conditional rendering with both branches" toReformat="false" toShortenFQNames="false">
+  <template name="ifelse" value="if ($STATE$) {&#10;&#9;$THEN$&#10;} else {&#10;&#9;$ELSE$&#10;}$END$" description="Insert a conditional rendering with both branches" toReformat="false" toShortenFQNames="false">
     <variable name="STATE" expression="" defaultValue="state" alwaysStopAt="true" />
     <variable name="THEN" expression="" defaultValue="Text(&quot;Visible&quot;)" alwaysStopAt="true" />
     <variable name="ELSE" expression="" defaultValue="Text(&quot;Hidden&quot;)" alwaysStopAt="true" />
@@ -16,6 +16,58 @@
     </context>
   </template>
   <template name="theme" value="theme { accent: &quot;#097FEB&quot;, radius: 12 }&#10;$END$" description="Insert the default theme block" toReformat="false" toShortenFQNames="false">
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+  <template name="opurom-app" value="app $APP$ {&#10;&#9;state $STATE$ = $INIT$&#10;&#10;&#9;Column(gap: 8, padding: 16) {&#10;&#9;&#9;Text(&quot;Count: {$STATE$}&quot;, size: 24)&#10;&#9;}&#10;}$END$" description="Create a new OPUROM app with state and a Column" toReformat="false" toShortenFQNames="false">
+    <variable name="APP" expression="" defaultValue="Counter" alwaysStopAt="true" />
+    <variable name="STATE" expression="" defaultValue="count" alwaysStopAt="true" />
+    <variable name="INIT" expression="" defaultValue="0" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+  <template name="opurom-column-text" value="Column(gap: $GAP$, padding: $PAD$, align: $ALIGN$) {&#10;&#9;Text(&quot;$TEXT$&quot;, size: $SIZE$)&#10;&#9;}$END$" description="Insert a Column containing one Text node" toReformat="false" toShortenFQNames="false">
+    <variable name="GAP" expression="" defaultValue="8" alwaysStopAt="true" />
+    <variable name="PAD" expression="" defaultValue="16" alwaysStopAt="true" />
+    <variable name="ALIGN" expression="" defaultValue="center" alwaysStopAt="true" />
+    <variable name="TEXT" expression="" defaultValue="Hello, OPUROM" alwaysStopAt="true" />
+    <variable name="SIZE" expression="" defaultValue="24" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+  <template name="opurom-button-inc" value="Button(&quot;$LABEL$&quot;) { $TARGET$ += 1 }$END$" description="Insert a Button whose tap handler increments an int state with += 1" toReformat="false" toShortenFQNames="false">
+    <variable name="LABEL" expression="" defaultValue="+" alwaysStopAt="true" />
+    <variable name="TARGET" expression="" defaultValue="count" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+  <template name="opurom-input-bind" value="Input(placeholder: &quot;$PLACEHOLDER$&quot;, bind: $BIND$)$END$" description="Insert an Input bound to a string state" toReformat="false" toShortenFQNames="false">
+    <variable name="PLACEHOLDER" expression="" defaultValue="Your name" alwaysStopAt="true" />
+    <variable name="BIND" expression="" defaultValue="name" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+  <template name="opurom-fullstack" value="app $APP$ {&#10;&#9;model $MODEL$ {&#10;&#9;&#9;$ID$: int primary&#10;&#9;&#9;$TITLE$: string&#10;&#9;&#9;$DONE$: bool = false&#10;&#9;}&#10;&#10;&#9;api &quot;$PATH$&quot; {&#10;&#9;&#9;list $MODEL$&#10;&#9;&#9;create $MODEL$&#10;&#9;}&#10;&#10;&#9;api &quot;$PATH$/:id&quot; {&#10;&#9;&#9;get $MODEL$&#10;&#9;&#9;update $MODEL$&#10;&#9;&#9;delete $MODEL$&#10;&#9;}&#10;&#10;&#9;state $REMAINING$ = 0&#10;&#9;Column(p: 16) {&#10;&#9;&#9;Text(&quot;Remaining: {$REMAINING$}&quot;)&#10;&#9;}&#10;}$END$" description="Insert an app with a model, two api blocks and a state" toReformat="false" toShortenFQNames="false">
+    <variable name="APP" expression="" defaultValue="TodoApp" alwaysStopAt="true" />
+    <variable name="MODEL" expression="" defaultValue="Todo" alwaysStopAt="true" />
+    <variable name="ID" expression="" defaultValue="id" alwaysStopAt="true" />
+    <variable name="TITLE" expression="" defaultValue="title" alwaysStopAt="true" />
+    <variable name="DONE" expression="" defaultValue="done" alwaysStopAt="true" />
+    <variable name="PATH" expression="" defaultValue="/todos" alwaysStopAt="true" />
+    <variable name="REMAINING" expression="" defaultValue="remaining" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+  <template name="opurom-theme" value="theme { mode: $MODE$, accent: &quot;$ACCENT$&quot;, radius: $RADIUS$ }$END$" description="Insert a theme block with mode, accent and radius" toReformat="false" toShortenFQNames="false">
+    <variable name="MODE" expression="" defaultValue="dark" alwaysStopAt="true" />
+    <variable name="ACCENT" expression="" defaultValue="#FF4D6D" alwaysStopAt="true" />
+    <variable name="RADIUS" expression="" defaultValue="8" alwaysStopAt="true" />
     <context>
       <option name="OPUROM" value="true" />
     </context>
