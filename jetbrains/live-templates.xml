@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templateSet group="OPUROM">
+  <template name="if" value="if ($STATE$) {&#10;&#9;$THEN$&#10;}$END$" description="Insert a conditional rendering block" toReformat="false" toShortenFQNames="false">
+    <variable name="STATE" expression="" defaultValue="state" alwaysStopAt="true" />
+    <variable name="THEN" expression="" defaultValue="Text(&quot;Visible&quot;)" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+  <template name="ifelse" value="if ($STATE$) {&#10;&#9;$THEN$&#10;} else {&#10;&#9;$ELSE$&#10;}$END$" description="Insert conditional rendering with both branches" toReformat="false" toShortenFQNames="false">
+    <variable name="STATE" expression="" defaultValue="state" alwaysStopAt="true" />
+    <variable name="THEN" expression="" defaultValue="Text(&quot;Visible&quot;)" alwaysStopAt="true" />
+    <variable name="ELSE" expression="" defaultValue="Text(&quot;Hidden&quot;)" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+  <template name="theme" value="theme { accent: &quot;#097FEB&quot;, radius: 12 }&#10;$END$" description="Insert the default theme block" toReformat="false" toShortenFQNames="false">
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
+</templateSet>

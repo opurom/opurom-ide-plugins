@@ -16,5 +16,6 @@
     <lang.parserDefinition
       language="OPUROM"
       implementationClass="opurom.jetbrains.metadata.OpuromParserDefinition" />
+    <defaultLiveTemplates file="live-templates.xml" />
   </extensions>
 </idea-plugin>

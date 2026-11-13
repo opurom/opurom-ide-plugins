@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readLiveTemplates, expandJetBrains, expandVsCode } from '../jetbrains/validate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const grammars = [
@@ -136,6 +137,69 @@ const expected = [
   ['}', 'punctuation.opurom', 'PUNCTUATION']
 ];
 
+const vscodeSnippets = load('vscode-opurom/snippets/opurom.json');
+const liveTemplates = readLiveTemplates(root);
+const snippetPrefixes = ['if', 'ifelse', 'theme'];
+const snippetBodies = snippetPrefixes.map(prefix =>
+  Object.values(vscodeSnippets).find(entry => entry.prefix === prefix)?.body
+);
+const canonicalSnippets = snippetBodies.map(body => expandVsCode(body));
+const conditionalSource = canonicalSnippets.join('\n\n');
+const expectedSnippetSource = [
+  'if (state) {',
+  '\tText("Visible")',
+  '}',
+  '',
+  'if (state) {',
+  '\tText("Visible")',
+  '} else {',
+  '\tText("Hidden")',
+  '}',
+  '',
+  'theme { accent: "#097FEB", radius: 12 }'
+].join('\n');
+
+const t = (text, scope) => [text, scope, tokenTypes.get(scope) ?? null];
+const snippetExpected = [
+  t('if', 'keyword.control.opurom'),
+  t('(', 'punctuation.opurom'),
+  t('state', 'keyword.control.opurom'),
+  t(')', 'punctuation.opurom'),
+  t('{', 'punctuation.opurom'),
+  t('Text', 'support.class.node.opurom'),
+  t('(', 'punctuation.opurom'),
+  t('"Visible"', 'string.quoted.double.opurom'),
+  t(')', 'punctuation.opurom'),
+  t('}', 'punctuation.opurom'),
+  t('if', 'keyword.control.opurom'),
+  t('(', 'punctuation.opurom'),
+  t('state', 'keyword.control.opurom'),
+  t(')', 'punctuation.opurom'),
+  t('{', 'punctuation.opurom'),
+  t('Text', 'support.class.node.opurom'),
+  t('(', 'punctuation.opurom'),
+  t('"Visible"', 'string.quoted.double.opurom'),
+  t(')', 'punctuation.opurom'),
+  t('}', 'punctuation.opurom'),
+  t('else', 'variable.other.identifier.opurom'),
+  t('{', 'punctuation.opurom'),
+  t('Text', 'support.class.node.opurom'),
+  t('(', 'punctuation.opurom'),
+  t('"Hidden"', 'string.quoted.double.opurom'),
+  t(')', 'punctuation.opurom'),
+  t('}', 'punctuation.opurom'),
+  t('theme', 'keyword.control.opurom'),
+  t('{', 'punctuation.opurom'),
+  t('accent', 'variable.parameter.prop.opurom'),
+  t(':', 'punctuation.opurom'),
+  t('"#097FEB"', 'string.quoted.double.opurom'),
+  t(',', 'punctuation.opurom'),
+  t('radius', 'variable.parameter.prop.opurom'),
+  t(':', 'punctuation.opurom'),
+  t('12', 'constant.numeric.opurom'),
+  t('}', 'punctuation.opurom')
+];
+
 for (const [label, relativePath] of grammars) {
   test(`${label} grammar tokenizes action verbs and attribute names`, () => {
     const tokens = tokenize(load(relativePath), snippet);
@@ -158,4 +222,39 @@ test('JetBrains lexer maps the action verb scope to the KEYWORD token type', () 
     'utf8'
   );
   assert.match(lexer, /grammar\.matches\("keyword\.control\.verb\.opurom", word\)/);
+});
+
+test('VS Code and JetBrains conditional snippets expand to the same source', () => {
+  assert.ok(snippetBodies.every(Boolean));
+  assert.equal(conditionalSource, expectedSnippetSource);
+  for (const [index, prefix] of snippetPrefixes.entries()) {
+    const template = liveTemplates.get(prefix);
+    assert.ok(template, `${prefix} live template exists`);
+    assert.equal(expandJetBrains(template), canonicalSnippets[index], `${prefix} body`);
+  }
+});
+
+test('conditional snippets include tab stops, both branches and the default theme', () => {
+  const [ifBody, ifElseBody] = snippetBodies.map(body => body?.join('\n') ?? '');
+  assert.match(ifBody, /if \(\$\{1:state\}\) \{/);
+  assert.match(ifBody, /\$\{2:/);
+  assert.match(ifElseBody, /\} else \{/);
+  assert.match(ifElseBody, /\$\{3:/);
+  assert.equal(canonicalSnippets[2], 'theme { accent: "#097FEB", radius: 12 }');
+});
+
+for (const [label, relativePath] of grammars) {
+  test(`${label} grammar tokenizes conditional and theme snippets`, () => {
+    const tokens = tokenize(load(relativePath), conditionalSource);
+    assert.deepEqual(
+      tokens.map(({ text, scope }) => [text, scope, tokenTypes.get(scope) ?? null]),
+      snippetExpected,
+      `${label} grammar`
+    );
+  });
+}
+
+test('all three grammars agree on the conditional snippet stream', () => {
+  const streams = grammars.map(([, relativePath]) => tokenize(load(relativePath), conditionalSource));
+  for (const stream of streams.slice(1)) assert.deepEqual(stream, streams[0]);
 });

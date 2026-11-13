@@ -29,6 +29,58 @@ function readJson(filePath) {
   }
 }
 
+function decodeXml(value) {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&amp;/g, '&');
+}
+
+function attributes(tag) {
+  const result = {};
+  for (const [, name, value] of tag.matchAll(/([A-Za-z_][A-Za-z0-9_.:-]*)\s*=\s*"([^"]*)"/g)) {
+    result[name] = decodeXml(value);
+  }
+  return result;
+}
+
+export function readLiveTemplates(rootDir = defaultRoot) {
+  const xml = readText(path.join(rootDir, 'jetbrains', 'live-templates.xml'));
+  const templates = new Map();
+  for (const [, tag, body] of xml.matchAll(/<template\s+([^>]*?)>([\s\S]*?)<\/template>/g)) {
+    const variables = {};
+    for (const [, variableTag] of body.matchAll(/<variable\s+([^>]*?)\/>/g)) {
+      const variable = attributes(variableTag);
+      variables[variable.name] = variable.defaultValue ?? '';
+    }
+    const template = attributes(tag);
+    templates.set(template.name, {
+      ...template,
+      variables,
+      context: /<option\s+name="OPUROM"\s+value="true"\s*\/>/.test(body)
+    });
+  }
+  return templates;
+}
+
+// Editor placeholder expansion is shared by validation and tokenization tests.
+export function expandVsCode(body) {
+  return (Array.isArray(body) ? body : [body])
+    .join('\n')
+    .replace(/\$\{\d+:([^}]*)\}/g, '$1')
+    .replace(/\$0/g, '')
+    .replace(/\n$/, '');
+}
+
+export function expandJetBrains(template) {
+  return template.value
+    .replace(/\$([A-Z_]+)\$/g, (_, name) => template.variables[name] ?? '')
+    .replace(/\n$/, '');
+}
+
 function walkJson(dir) {
   const files = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -55,7 +107,7 @@ function tagEnd(xml, start) {
 }
 
 // shortcut: DOCTYPE, custom entities and entity expansion are rejected, upgrade to a full XML parser when plugin.xml needs them.
-function inspectXml(xml) {
+function inspectXml(xml, expectedRoot = 'idea-plugin') {
   const declaration = DECLARATION.exec(xml);
   if (!declaration) throw new Error('missing XML declaration');
   let index = declaration[0].length;
@@ -122,7 +174,7 @@ function inspectXml(xml) {
     elements += 1;
   }
   if (stack.length) throw new Error(`unclosed tags: ${stack.join(', ')}`);
-  if (!root || root !== 'idea-plugin') throw new Error(`unexpected root element ${root || '(none)'}`);
+  if (!root || root !== expectedRoot) throw new Error(`unexpected root element ${root || '(none)'}`);
   if (!rootClosed) throw new Error('root element not closed');
   return { root, elements };
 }
@@ -178,6 +230,17 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
   check(Boolean(xmlInfo), 'JetBrains plugin.xml well-formed',
     xmlError || `${xmlInfo.elements} elements, declaration, balanced tags, one root`);
 
+  const liveTemplatesXml = readText(path.join(jetbrains, 'live-templates.xml'));
+  let liveTemplatesInfo = null;
+  let liveTemplatesXmlError = '';
+  try {
+    liveTemplatesInfo = inspectXml(liveTemplatesXml, 'templateSet');
+  } catch (error) {
+    liveTemplatesXmlError = error.message;
+  }
+  check(Boolean(liveTemplatesInfo), 'JetBrains live-template XML well-formed',
+    liveTemplatesXmlError || `${liveTemplatesInfo.elements} elements, one templateSet root`);
+
   const validXmlSample = `<?xml version="1.0" encoding="UTF-8"?>
 <!-- metadata -->
 <idea-plugin>
@@ -220,6 +283,8 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
     /<lang\.parserDefinition\b/.test(pluginXml)
   );
   check(pluginMetadataOk, 'JetBrains plugin metadata', 'id, name, vendor, depends, language/file type extensions');
+  check(pluginXml.includes('<defaultLiveTemplates file="live-templates.xml" />'),
+    'JetBrains live-template registration', 'defaultLiveTemplates points at live-templates.xml');
 
   const pluginScopePhrases = [
     'configuration metadata only',
@@ -353,6 +418,18 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
   );
   check(lspOk, 'JetBrains LSP config metadata', 'command, args, language id, extensions, sibling server');
 
+  const liveTemplates = readLiveTemplates(rootDir);
+  const templateNames = ['if', 'ifelse', 'theme'];
+  const templates = templateNames.map(name => liveTemplates.get(name));
+  const liveTemplatesOk = liveTemplates.size === templateNames.length &&
+    templates.every(template => template?.value && template.description && template.context) &&
+    templates.every(template => !/\$[A-Z_]+\$/.test(expandJetBrains(template))) &&
+    templates[0]?.variables.STATE === 'state' &&
+    templates[0]?.variables.THEN === 'Text("Visible")' &&
+    templates[1]?.variables.ELSE === 'Text("Hidden")' &&
+    expandJetBrains(templates[2]) === 'theme { accent: "#097FEB", radius: 12 }';
+  check(liveTemplatesOk, 'JetBrains live templates', `${liveTemplates.size} conditional and theme templates`);
+
   const fileExtensionOk = Boolean(
     Array.isArray(grammar.fileTypes) && grammar.fileTypes.includes('opu') &&
     Array.isArray(lsp.fileExtensions) && lsp.fileExtensions.includes('.opu') &&
@@ -386,6 +463,7 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
   const sourceFiles = [
     path.join(jetbrains, 'opurom.tmLanguage.json'),
     path.join(jetbrains, 'lsp-client.json'),
+    path.join(jetbrains, 'live-templates.xml'),
     path.join(jetbrains, 'plugin.xml'),
     path.join(jetbrains, 'validate.mjs'),
     path.join(jetbrains, 'README.md'),

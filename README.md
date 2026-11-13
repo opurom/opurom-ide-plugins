@@ -1,6 +1,6 @@
 # OPUROM IDE Plugins
 
-Independent repository for OPUROM editor tooling. It ships [vscode-opurom](vscode-opurom/README.md): a loadable, zero-build-step VS Code extension with a built-in language server client, a `contributes.debuggers` entry and a debug adapter descriptor that launches `node ../opurom-debug/bin/server.mjs --stdio` from the sibling `opurom-debug` repository. There is no bundler, generated code, or npm install step. The [JetBrains metadata](jetbrains/README.md) directory holds a standalone TextMate-style grammar subset, LSP client configuration stub and plugin.xml metadata, and the separate [compiled JetBrains runtime subproject](jetbrains-runtime/README.md) holds the Gradle IntelliJ Platform plugin.
+Independent repository for OPUROM editor tooling. It ships [vscode-opurom](vscode-opurom/README.md): a loadable, zero-build-step VS Code extension with a built-in language server client, a `contributes.debuggers` entry and a debug adapter descriptor that launches `node ../opurom-debug/bin/server.mjs --stdio` from the sibling `opurom-debug` repository. There is no bundler, generated code, or npm install step. The [JetBrains metadata](jetbrains/README.md) directory holds a standalone TextMate-style grammar subset, LSP client configuration stub, plugin.xml metadata and live-template metadata, and the separate [compiled JetBrains runtime subproject](jetbrains-runtime/README.md) holds the Gradle IntelliJ Platform plugin.
 
 ## Install
 
@@ -22,7 +22,7 @@ No VSIX is shipped in this repository. Build `opurom-lang` (`cargo build`) or se
 ## Features
 
 - `.opu` language registration with TextMate syntax highlighting for comments, `app`/`state`/`model`/`api`/`theme`/`if`/`for`, the API verbs, the action verbs `set`/`add`/`sub`/`toggle`, the `primary` modifier, the effect words, the `animate`/`fontScale` attribute names, all 24 node kinds, prop names, literals, `{name}` interpolation, `+=`, `-=`, `=`, `.toggle()`, and punctuation.
-- Six snippets: new app, Column with Text, Button with `+= 1`, bound Input, a full-stack `model` plus `api` scaffold, and a theme block.
+- Nine snippets: new app, Column with Text, Button with `+= 1`, bound Input, a full-stack `model` plus `api` scaffold, a configurable theme block, `if` and `ifelse` conditional rendering, and the canonical `theme` block.
 - `OPUROM: Compile OPUROM to IR` writes `<name>.opuir.json` beside the source.
 - `OPUROM: Check OPUROM file` runs `opuromc check`, or `opurom check` through `opurom.cliPath` when configured.
 - `OPUROM: Show active OPUROM document info` reports the filename and line count of the active `.opu` document, and a clear message when no `.opu` editor is active.
@@ -62,7 +62,7 @@ node --test
 node jetbrains/validate.mjs
 ```
 
-`scripts/validate.mjs` cross-checks every contributed command id against its registered handler and activation event. `test/extension-commands.test.mjs` covers the command declarations and behavior, and `test/lsp-client.test.mjs` covers the client restart lifecycle.
+`scripts/validate.mjs` cross-checks every contributed command id against its registered handler and activation event. `test/extension-commands.test.mjs` covers the command declarations and behavior, `test/lsp-client.test.mjs` covers the client restart lifecycle, and `test/grammar-tokenization.test.mjs` covers action verbs, attribute names and the shared conditional and theme snippet bodies.
 
 ## Status
 
@@ -72,9 +72,9 @@ The debugger is a DAP subset contribution backed by a separate adapter repositor
 
 ## JetBrains metadata
 
-[jetbrains/](jetbrains/README.md) contains grammar/config METADATA only. `opurom.tmLanguage.json` is a standalone TextMate-style grammar subset for `.opu` with the language keywords, the action verbs and `animate`/`fontScale` attribute names, async effects, 32 primitive kinds, interpolation, comments, numbers and booleans. `lsp-client.json` records the `opurom` language id, `.opu` extensions, and the sibling `opurom-lsp` stdio server command as configuration metadata; it is NOT a running IntelliJ client. `plugin.xml` is well-formed IntelliJ plugin metadata with id, name, vendor, depends, and language/file type extensions. `validate.mjs` checks JSON, XML, keyword coverage and status text with Node builtins only.
+[jetbrains/](jetbrains/README.md) contains grammar/config METADATA only. `opurom.tmLanguage.json` is a standalone TextMate-style grammar subset for `.opu` with the language keywords, the action verbs and `animate`/`fontScale` attribute names, async effects, 32 primitive kinds, interpolation, comments, numbers and booleans. `lsp-client.json` records the `opurom` language id, `.opu` extensions, and the sibling `opurom-lsp` stdio server command as configuration metadata; it is NOT a running IntelliJ client. `live-templates.xml` records the `if`, `ifelse` and `theme` bodies as conditional rendering metadata. `plugin.xml` is well-formed IntelliJ plugin metadata with id, name, vendor, depends, and language/file type extensions. `validate.mjs` checks JSON, XML, keyword coverage and status text with Node builtins only.
 
-The metadata directory holds configuration only. The compiled plugin and its IntelliJ runtime verification live in the [runtime subproject](jetbrains-runtime/README.md). The VS Code extension and its DAP subset contribution are unchanged; the metadata directory has no debugger integration of its own.
+The metadata directory holds configuration only. The compiled plugin and its IntelliJ runtime verification live in the [runtime subproject](jetbrains-runtime/README.md). The DAP subset contribution is unchanged; the metadata directory has no debugger integration of its own.
 
 ## Compiled JetBrains plugin
 
