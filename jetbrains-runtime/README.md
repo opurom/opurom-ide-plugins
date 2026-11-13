@@ -6,7 +6,7 @@ This subproject is a real compiled IntelliJ Platform plugin. It is separate from
 
 - `settings.gradle` and `build.gradle`: Gradle 8.7, JDK 21, `org.jetbrains.intellij` 1.17.4, ideaIC `2023.3.6`, and a `buildPlugin` distributable ZIP.
 - `src/main/resources/META-INF/plugin.xml`: plugin id, name, vendor, `idea-version`, dependencies, `com.intellij.modules.platform`/`lang`, OPUROM file type and language syntax highlighter, custom grammar and LSP client extension points, LSP startup activity and service.
-- `src/main/resources/textmate/opurom.tmLanguage.json`: bundled OPUROM grammar resource used by the syntax highlighter.
+- `src/main/resources/textmate/opurom.tmLanguage.json`: bundled OPUROM grammar resource used by the syntax highlighter. It highlights the action verbs `set`/`add`/`sub`/`toggle` and the `animate`/`fontScale` attribute names.
 - `src/main/java/opurom/jetbrains/`: language, file type, lexer, syntax highlighter, startup activity, grammar extension, LSP client manager, JSON parser, diagnostics parser, framed LSP client and a standalone LSP probe.
 - `verify.mjs`: zero-dependency Node ZIP verifier using `unzip -l` and `unzip -p`.
 - `build.mjs`: zero-dependency javac/JAR/ZIP fallback builder.
