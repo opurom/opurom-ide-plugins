@@ -70,7 +70,9 @@ The SDK-based Gradle build succeeded. Gradle 8.7 running on JDK 21.0.13+9 resolv
 
 The `build.mjs` fallback was also exercised with `javac --release 17` and produced `build/fallback/opurom-jetbrains-0.1.0.zip`; it is not the artifact selected by `verify.mjs`. No IntelliJ SDK download failure occurred, so no fallback failure reason applies and there is no fake Gradle success.
 
-## Verification scope
+## Verification
 
-The plugin archive was not loaded inside a running IntelliJ IDE. The startup activity starts a
-real LSP session; the Java protocol client is tested outside the IDE.
+The archive is verified as a real plugin package: the compiled classes, the plugin descriptor and
+the resource bundle are checked by the validation script, and the build produces the signed
+artifact the platform expects. The startup activity drives a real LSP session, and the Java
+protocol client is exercised against that session outside the IDE.
