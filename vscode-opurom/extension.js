@@ -159,6 +159,27 @@ async function run(vscode, output, diagnostics, mode) {
 // Holds the running language server for the lifetime of the extension.
 let languageServer = null;
 
+// A fresh server process needs the handshake and every open document replayed.
+function initializeLspSession(vscode, client) {
+  client.request('initialize', {
+    processId: process.pid,
+    rootUri: vscode.workspace.workspaceFolders?.[0]?.uri.toString() || null,
+    capabilities: {}
+  });
+  client.notify('initialized', {});
+  for (const document of vscode.workspace.textDocuments) {
+    if (document.languageId !== 'opurom') continue;
+    client.notify('textDocument/didOpen', {
+      textDocument: {
+        uri: document.uri.toString(),
+        languageId: document.languageId,
+        version: document.version,
+        text: document.getText()
+      }
+    });
+  }
+}
+
 function startLanguageServer(vscode, context, output, diagnostics) {
   const config = vscode.workspace.getConfiguration('opurom');
   const configured = String(config.get('lspPath') || '').trim();
@@ -206,13 +227,6 @@ function startLanguageServer(vscode, context, output, diagnostics) {
   });
 
   client.start();
-  client.request('initialize', {
-    processId: process.pid,
-    rootUri: vscode.workspace.workspaceFolders?.[0]?.uri.toString() || null,
-    capabilities: {}
-  });
-  client.notify('initialized', {});
-  output.appendLine(`OPUROM language server started: ${serverPath}`);
 
   const isOpurom = document => document.languageId === 'opurom';
   context.subscriptions.push(
@@ -243,20 +257,34 @@ function startLanguageServer(vscode, context, output, diagnostics) {
     { dispose: () => client.stop() }
   );
 
-  // Documents already open when the extension activates are sent once.
-  for (const document of vscode.workspace.textDocuments) {
-    if (!isOpurom(document)) continue;
-    client.notify('textDocument/didOpen', {
-      textDocument: {
-        uri: document.uri.toString(),
-        languageId: document.languageId,
-        version: document.version,
-        text: document.getText()
-      }
-    });
-  }
+  initializeLspSession(vscode, client);
+  output.appendLine(`OPUROM language server started: ${serverPath}`);
 
   return client;
+}
+
+function showActiveDocumentInfo(vscode) {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.languageId !== 'opurom') {
+    vscode.window.showInformationMessage('Open an active .opu file to show its document info.');
+    return;
+  }
+  const document = editor.document;
+  const lines = document.lineCount;
+  vscode.window.showInformationMessage(
+    `OPUROM: ${path.basename(document.uri.fsPath)} has ${lines} ${lines === 1 ? 'line' : 'lines'}.`
+  );
+}
+
+function restartLanguageServer(vscode, output, client) {
+  if (!client) {
+    vscode.window.showInformationMessage('The OPUROM language server is not running.');
+    return;
+  }
+  client.restart();
+  initializeLspSession(vscode, client);
+  output.appendLine('OPUROM language server restarted.');
+  vscode.window.showInformationMessage('OPUROM language server restarted.');
 }
 
 function activate(context) {
@@ -267,7 +295,11 @@ function activate(context) {
     output,
     diagnostics,
     vscode.commands.registerCommand('opurom.compile', () => run(vscode, output, diagnostics, 'compile')),
-    vscode.commands.registerCommand('opurom.check', () => run(vscode, output, diagnostics, 'check'))
+    vscode.commands.registerCommand('opurom.check', () => run(vscode, output, diagnostics, 'check')),
+    vscode.commands.registerCommand('opurom.showActiveDocumentInfo', () => showActiveDocumentInfo(vscode)),
+    vscode.commands.registerCommand('opurom.restartLanguageServer', () =>
+      restartLanguageServer(vscode, output, languageServer)
+    )
   );
   const debugServer = defaultDebugServerPath();
   if (!fs.existsSync(debugServer)) {
@@ -297,5 +329,7 @@ module.exports = {
   defaultLspServerPath,
   defaultDebugServerPath,
   debugAdapterDescriptor,
+  showActiveDocumentInfo,
+  restartLanguageServer,
   toolFor
 };

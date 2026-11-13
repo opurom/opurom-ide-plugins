@@ -210,6 +210,8 @@ const manifestOk = Boolean(
   events.includes('onLanguage:opurom') &&
   events.includes('onCommand:opurom.compile') &&
   events.includes('onCommand:opurom.check') &&
+  commandIds.every(id => events.includes(`onCommand:${id}`)) &&
+  events.filter(event => event.startsWith('onCommand:')).length === commandIds.length &&
   events.includes('onDebug') &&
   events.includes('onDebugResolve:opurom') &&
   lang?.id === 'opurom' &&
@@ -298,6 +300,19 @@ check(
   'extension.js runtime contract',
   'spawnSync, diagnostics, output, commands, deactivate'
 );
+const registeredCommands = [...extensionSrc.matchAll(/registerCommand\('([^']+)'/g)]
+  .map(match => match[1]);
+const unimplementedCommands = commandIds.filter(id => !registeredCommands.includes(id));
+const undeclaredCommands = registeredCommands.filter(id => !commandIds.includes(id));
+check(
+  unimplementedCommands.length === 0 &&
+  undeclaredCommands.length === 0 &&
+  commandIds.length === registeredCommands.length &&
+  new Set(commandIds).size === commandIds.length &&
+  new Set(registeredCommands).size === registeredCommands.length,
+  'every contributed command has a handler (and vice versa)',
+  `${commandIds.length} commands`
+);
 const syntax = spawnSync(process.execPath, ['--check', extensionPath], { encoding: 'utf8' });
 check(syntax.status === 0, 'extension.js syntax (node --check)', syntax.stderr.trim() || 'no syntax errors');
 
@@ -320,6 +335,11 @@ const clientOk = clientCode.every(marker => clientSrc.includes(marker)) &&
   !/require\(['"]vscode-languageserver/.test(clientSrc) &&
   !clientSrc.includes('require(\'vscode\')');
 check(clientOk, 'lsp-client.js runtime contract', 'spawn, framing, publishDiagnostics, lifecycle');
+check(
+  clientSrc.includes('restart()') && extensionSrc.includes('client.restart()'),
+  'language server restart wiring',
+  'LspClient.restart() called by the restart command'
+);
 
 const lspMarkers = [
   "require('./lsp-client')",

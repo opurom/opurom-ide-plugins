@@ -12,6 +12,8 @@
     "onLanguage:opurom",
     "onCommand:opurom.compile",
     "onCommand:opurom.check",
+    "onCommand:opurom.showActiveDocumentInfo",
+    "onCommand:opurom.restartLanguageServer",
     "onDebug",
     "onDebugResolve:opurom"
   ],
@@ -47,6 +49,16 @@
       {
         "command": "opurom.check",
         "title": "Check OPUROM file",
+        "category": "OPUROM"
+      },
+      {
+        "command": "opurom.showActiveDocumentInfo",
+        "title": "Show active OPUROM document info",
+        "category": "OPUROM"
+      },
+      {
+        "command": "opurom.restartLanguageServer",
+        "title": "Restart OPUROM language server",
         "category": "OPUROM"
       }
     ],

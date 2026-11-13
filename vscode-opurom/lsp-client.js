@@ -33,16 +33,30 @@ class LspClient {
 
   start() {
     if (this.child) return;
-    this.child = spawn(process.execPath, [this.serverPath, '--stdio'], {
+    const child = spawn(process.execPath, [this.serverPath, '--stdio'], {
       stdio: ['pipe', 'pipe', 'pipe']
     });
-    this.child.stdout.on('data', chunk => this._onData(chunk));
-    this.child.stderr.on('data', chunk => this.onMessage({ kind: 'stderr', text: String(chunk) }));
-    this.child.on('exit', () => {
+    this.child = child;
+    child.stdout.on('data', chunk => {
+      // Frames from a killed server must not feed the replacement session.
+      if (this.child === child) this._onData(chunk);
+    });
+    child.stderr.on('data', chunk => this.onMessage({ kind: 'stderr', text: String(chunk) }));
+    child.on('exit', () => {
+      if (this.child !== child) return;
       this.child = null;
       this.closed = true;
     });
-    this.child.on('error', error => this.onMessage({ kind: 'error', text: error.message }));
+    child.on('error', error => this.onMessage({ kind: 'error', text: error.message }));
+  }
+
+  restart() {
+    this.stop();
+    this.buffer = Buffer.alloc(0);
+    this.pending.clear();
+    this.nextId = 1;
+    this.closed = false;
+    this.start();
   }
 
   _onData(chunk) {

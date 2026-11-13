@@ -6,6 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -66,3 +67,46 @@ test('the client receives diagnostics from the language server', { skip: !availa
   assert.equal(published[0].diagnostics[0].severity, 1);
   assert.match(published[0].diagnostics[0].message, /unknown state/);
 });
+
+test('the client restarts the language server process', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'opurom-lsp-restart-'));
+  const server = path.join(dir, 'server.mjs');
+  const log = path.join(dir, 'pids.log');
+  fs.writeFileSync(server, [
+    "import fs from 'node:fs';",
+    "fs.appendFileSync(process.env.OPUROM_RESTART_LOG, String(process.pid) + '\\n');",
+    "process.stdin.on('data', chunk => {",
+    "  if (String(chunk).includes('shutdown')) process.exit(0);",
+    '});'
+  ].join('\n') + '\n');
+  const previous = process.env.OPUROM_RESTART_LOG;
+  process.env.OPUROM_RESTART_LOG = log;
+  const client = new LspClient(server);
+  try {
+    client.start();
+    await waitForPids(log, 1);
+    client.restart();
+    const pids = await waitForPids(log, 2);
+    assert.equal(pids.length, 2);
+    assert.notEqual(pids[0], pids[1]);
+    assert.equal(String(client.child.pid), pids[1]);
+    assert.equal(client.closed, false);
+  } finally {
+    client.stop();
+    if (previous === undefined) delete process.env.OPUROM_RESTART_LOG;
+    else process.env.OPUROM_RESTART_LOG = previous;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+async function waitForPids(file, count) {
+  const deadline = Date.now() + 5000;
+  for (;;) {
+    if (fs.existsSync(file)) {
+      const pids = fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean);
+      if (pids.length >= count) return pids;
+    }
+    if (Date.now() > deadline) throw new Error('language server process did not start');
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+}

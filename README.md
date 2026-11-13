@@ -25,6 +25,8 @@ No VSIX is shipped in this repository. Build `opurom-lang` (`cargo build`) or se
 - Six snippets: new app, Column with Text, Button with `+= 1`, bound Input, a full-stack `model` plus `api` scaffold, and a theme block.
 - `OPUROM: Compile OPUROM to IR` writes `<name>.opuir.json` beside the source.
 - `OPUROM: Check OPUROM file` runs `opuromc check`, or `opurom check` through `opurom.cliPath` when configured.
+- `OPUROM: Show active OPUROM document info` reports the filename and line count of the active `.opu` document, and a clear message when no `.opu` editor is active.
+- `OPUROM: Restart OPUROM language server` restarts the language server process, replays the LSP handshake and reopens the current `.opu` documents.
 - Compiler output goes to the OPUROM output channel; `path:line:col: error: message` and warning lines become Problems-panel diagnostics. Success shows an information message.
 - A zero-dependency language server client: the extension spawns `node <opurom-lsp/bin/server.mjs> --stdio` and talks JSON-RPC over stdio. It sends `initialize`, `didOpen`, `didChange` and `didClose`, applies the published diagnostics to the Problems panel and shuts the server down on deactivate.
 - The LSP server provides diagnostics, hover, completion and definition for the open document. Autocomplete comes from that completion provider; snippets remain static insertions.
@@ -59,6 +61,8 @@ node scripts/validate.mjs
 node --test
 node jetbrains/validate.mjs
 ```
+
+`scripts/validate.mjs` cross-checks every contributed command id against its registered handler and activation event. `test/extension-commands.test.mjs` covers the command declarations and behavior, and `test/lsp-client.test.mjs` covers the client restart lifecycle.
 
 ## Status
 

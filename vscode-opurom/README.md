@@ -32,6 +32,8 @@ No VSIX is included here. Build `opurom-lang` with `cargo build`, or set `opurom
 - Snippets: `opurom-app`, `opurom-column-text`, `opurom-button-inc`, `opurom-input-bind`, `opurom-fullstack` (a `model` plus two `api` blocks), `opurom-theme`.
 - `opurom.compile` runs `opuromc compile <src> -o <name>.opuir.json`.
 - `opurom.check` runs `opuromc check <src>`; if `opurom.cliPath` is set, it runs `node <cliPath> check <src>` instead.
+- `opurom.showActiveDocumentInfo` reports the active `.opu` filename and line count, and a clear message when no `.opu` editor is active.
+- `opurom.restartLanguageServer` restarts the language server process, replays the LSP handshake and reopens the current `.opu` documents.
 - Raw compiler stdout/stderr appears in the **OPUROM** output channel. `path:line:col: error: message` and warning lines become `vscode.Diagnostic` entries in a `DiagnosticCollection` (Problems panel). Success shows an information message.
 - A DAP subset debugger descriptor launches `node ../opurom-debug/bin/server.mjs --stdio`. Launch attributes are `program`, `steps`, and optional `coreBinary`. Conditions inspect real kernel state after each command.
 
@@ -81,6 +83,8 @@ Validate from the repository root:
 node scripts/validate.mjs
 node --test
 ```
+
+`scripts/validate.mjs` checks that every contributed command has a registered handler. `test/extension-commands.test.mjs` covers the command declarations and behavior, and `test/lsp-client.test.mjs` covers the client restart lifecycle.
 
 ## Status
 
