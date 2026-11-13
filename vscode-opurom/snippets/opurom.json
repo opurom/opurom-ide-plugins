@@ -63,6 +63,17 @@
     ],
     "description": "Insert an app with a model, two api blocks and a state"
   },
+  "Particle field Container": {
+    "prefix": "opurom-particles",
+    "body": [
+      "Container(p: ${1:16}, rounded: ${2:12}, animate: ${3|spring,ease,none|},",
+      "\tparticles: \"count=${4:64},seed=${5:7},radius=${6:3}\") {",
+      "\tText(\"${7:Particle field}\")",
+      "}",
+      "$0"
+    ],
+    "description": "Insert a Container with a seeded particles field and an animation"
+  },
   "Theme block": {
     "prefix": "opurom-theme",
     "body": [

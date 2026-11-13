@@ -22,7 +22,7 @@ No VSIX is shipped in this repository. Build `opurom-lang` (`cargo build`) or se
 ## Features
 
 - `.opu` language registration with TextMate syntax highlighting for comments, `app`/`state`/`model`/`api`/`theme`/`if`/`for`, the API verbs, the action verbs `set`/`add`/`sub`/`toggle`, the `primary` modifier, the effect words, the `animate`/`fontScale` attribute names, all 24 node kinds, prop names, literals, `{name}` interpolation, `+=`, `-=`, `=`, `.toggle()`, and punctuation.
-- Nine snippets: new app, Column with Text, Button with `+= 1`, bound Input, a full-stack `model` plus `api` scaffold, a configurable theme block, `if` and `ifelse` conditional rendering, and the canonical `theme` block.
+- Ten snippets: new app, Column with Text, Button with `+= 1`, bound Input, a full-stack `model` plus `api` scaffold, a configurable theme block, `if` and `ifelse` conditional rendering, the canonical `theme` block, and a particles field Container with `particles:` and `animate:`.
 - `OPUROM: Compile OPUROM to IR` writes `<name>.opuir.json` beside the source.
 - `OPUROM: Check OPUROM file` runs `opuromc check`, or `opurom check` through `opurom.cliPath` when configured.
 - `OPUROM: Show active OPUROM document info` reports the filename and line count of the active `.opu` document, and a clear message when no `.opu` editor is active.

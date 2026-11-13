@@ -64,6 +64,18 @@
       <option name="OPUROM" value="true" />
     </context>
   </template>
+  <template name="opurom-particles" value="Container(p: $PAD$, rounded: $ROUNDED$, animate: $ANIMATE$,&#10;&#9;particles: &quot;count=$COUNT$,seed=$SEED$,radius=$RADIUS$&quot;) {&#10;&#9;Text(&quot;$LABEL$&quot;)&#10;}$END$" description="Insert a Container with a seeded particles field and an animation" toReformat="false" toShortenFQNames="false">
+    <variable name="PAD" expression="" defaultValue="16" alwaysStopAt="true" />
+    <variable name="ROUNDED" expression="" defaultValue="12" alwaysStopAt="true" />
+    <variable name="ANIMATE" expression="" defaultValue="spring" alwaysStopAt="true" />
+    <variable name="COUNT" expression="" defaultValue="64" alwaysStopAt="true" />
+    <variable name="SEED" expression="" defaultValue="7" alwaysStopAt="true" />
+    <variable name="RADIUS" expression="" defaultValue="3" alwaysStopAt="true" />
+    <variable name="LABEL" expression="" defaultValue="Particle field" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
   <template name="opurom-theme" value="theme { mode: $MODE$, accent: &quot;$ACCENT$&quot;, radius: $RADIUS$ }$END$" description="Insert a theme block with mode, accent and radius" toReformat="false" toShortenFQNames="false">
     <variable name="MODE" expression="" defaultValue="dark" alwaysStopAt="true" />
     <variable name="ACCENT" expression="" defaultValue="#FF4D6D" alwaysStopAt="true" />

@@ -182,7 +182,7 @@ const snippetOk = snippetEntries.length >= 5 &&
   snippetEntries.every(entry => entry.prefix && Array.isArray(entry.body) && entry.description) &&
   ['opurom-app', 'Column', 'Text', 'Button', '+= 1', 'Input', 'bind:',
     'opurom-fullstack', 'model', 'api', 'primary', 'if (', 'ifelse', '} else {',
-    '#097FEB', 'radius: 12'].every(token => snippetText.includes(token));
+    '#097FEB', 'radius: 12', 'particles:', 'count=', 'animate:'].every(token => snippetText.includes(token));
 check(snippetOk, 'snippets', `${snippetEntries.length} snippets`);
 const fullstackSnippet = snippetEntries.find(entry => entry.prefix === 'opurom-fullstack');
 const scaffoldOk = Boolean(
@@ -197,7 +197,8 @@ check(scaffoldOk, 'full-stack snippet scaffold', 'model + api + handlers');
 // same source text, so neither editor's completion falls behind the other.
 const parityPrefixes = [
   'if', 'ifelse', 'theme', 'opurom-app', 'opurom-column-text',
-  'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme'
+  'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme',
+  'opurom-particles'
 ];
 const paritySnippets = parityPrefixes.map(prefix =>
   snippetEntries.find(entry => entry.prefix === prefix)
