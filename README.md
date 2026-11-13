@@ -70,7 +70,7 @@ The debugger is a DAP subset contribution backed by a separate adapter repositor
 
 [jetbrains/](jetbrains/README.md) contains grammar/config METADATA only. `opurom.tmLanguage.json` is a standalone TextMate-style grammar subset for `.opu` with the language keywords, async effects, 32 primitive kinds, interpolation, comments, numbers and booleans. `lsp-client.json` records the `opurom` language id, `.opu` extensions, and the sibling `opurom-lsp` stdio server command as configuration metadata; it is NOT a running IntelliJ client. `plugin.xml` is well-formed IntelliJ plugin metadata with id, name, vendor, depends, and language/file type extensions. `validate.mjs` checks JSON, XML, keyword coverage and status text with Node builtins only.
 
-The metadata directory holds configuration only. The compiled plugin and its IntelliJ runtime verification live in the [runtime subproject](../jetbrains-runtime/README.md). The VS Code extension and its DAP subset contribution are unchanged; the metadata directory has no debugger integration of its own.
+The metadata directory holds configuration only. The compiled plugin and its IntelliJ runtime verification live in the [runtime subproject](jetbrains-runtime/README.md). The VS Code extension and its DAP subset contribution are unchanged; the metadata directory has no debugger integration of its own.
 
 ## Compiled JetBrains plugin
 
