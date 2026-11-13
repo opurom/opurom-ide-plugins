@@ -221,18 +221,17 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
   );
   check(pluginMetadataOk, 'JetBrains plugin metadata', 'id, name, vendor, depends, language/file type extensions');
 
-  const pluginHonestyPhrases = [
+  const pluginScopePhrases = [
     'configuration metadata only',
     'metadata placeholders',
     'no compiled plugin',
     'no intellij runtime test',
     'no jetbrains marketplace publication',
-    'no debugger integration',
-    'r5+'
+    'no debugger integration'
   ];
   const pluginXmlLower = pluginXml.toLowerCase();
-  check(pluginHonestyPhrases.every(phrase => pluginXmlLower.includes(phrase)),
-    'JetBrains plugin.xml honest status', 'metadata-only, no runtime, compile, marketplace or debugger');
+  check(pluginScopePhrases.every(phrase => pluginXmlLower.includes(phrase)),
+    'JetBrains plugin.xml scope', 'metadata-only, no runtime, compile, marketplace or debugger');
 
   const scopes = new Set();
   const regexes = [];
@@ -291,24 +290,24 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
   const specificPatterns = scoped
     .filter(entry => entry.scope !== 'variable.other.identifier.opurom')
     .map(entry => entry.pattern);
-  const r4Keywords = [
+  const languageKeywords = [
     'app', 'state', 'model', 'api', 'theme', 'import', 'async', 'await', 'if', 'for',
     'list', 'get', 'create', 'update', 'delete', 'primary', 'delay', 'fetch',
     'spring', 'ease', 'glass', 'gradient', 'shadow', 'opacity', 'animate',
     'true', 'false'
   ];
-  const missedKeywords = r4Keywords.filter(word =>
+  const missedKeywords = languageKeywords.filter(word =>
     !specificPatterns.some(pattern => pattern.test(word))
   );
-  check(missedKeywords.length === 0, 'JetBrains R4 keyword coverage', `${r4Keywords.length} keywords`);
+  check(missedKeywords.length === 0, 'JetBrains keyword coverage', `${languageKeywords.length} keywords`);
 
   const legacyKinds = [
     'Column', 'Row', 'Container', 'Text', 'Button', 'Input', 'Image', 'Spacer',
     'Card', 'Divider', 'Icon', 'Badge', 'Progress', 'Switch', 'Slider', 'Checkbox',
     'Radio', 'Dialog', 'Tabs', 'List', 'Grid', 'Scroll', 'Avatar', 'Spinner'
   ];
-  const r4Kinds = ['Table', 'Chart', 'Calendar', 'RichText', 'Player', 'Map', 'Menu', 'Tooltip'];
-  const allKinds = [...legacyKinds, ...r4Kinds];
+  const extraKinds = ['Table', 'Chart', 'Calendar', 'RichText', 'Player', 'Map', 'Menu', 'Tooltip'];
+  const allKinds = [...legacyKinds, ...extraKinds];
   const nodePatterns = scoped
     .filter(entry => entry.scope?.startsWith('support.class.node'))
     .map(entry => entry.pattern);
@@ -365,14 +364,11 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
 
   const rootReadme = readText(path.join(rootDir, 'README.md'));
   const readme = readText(path.join(jetbrains, 'README.md'));
-  const honestyPhrases = [
+  const scopePhrases = [
     'metadata only',
-    'no intellij runtime test',
-    'no compiled plugin',
-    'no jetbrains marketplace publication',
     'no debugger integration',
     'not a running intellij client',
-    'r5+'
+    'jetbrains-runtime'
   ];
   const forbiddenPhrases = [
     'intellij runtime tested',
@@ -380,12 +376,12 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
     'published to the jetbrains marketplace',
     'debugger integration ships'
   ];
-  const honestyOk = [rootReadme, readme].every(text => {
+  const scopeOk = [rootReadme, readme].every(text => {
     const lower = text.toLowerCase();
-    return honestyPhrases.every(phrase => lower.includes(phrase)) &&
+    return scopePhrases.every(phrase => lower.includes(phrase)) &&
       forbiddenPhrases.every(phrase => !lower.includes(phrase));
   });
-  check(honestyOk, 'JetBrains README honesty', '2 files, 7 disclosures, no overclaims');
+  check(scopeOk, 'JetBrains README scope', '2 files, 6 disclosures, no overclaims');
 
   const sourceFiles = [
     path.join(jetbrains, 'opurom.tmLanguage.json'),

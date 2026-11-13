@@ -3,7 +3,7 @@
   <id>opurom.jetbrains.metadata</id>
   <name>OPUROM JetBrains Metadata</name>
   <vendor>OPUROM</vendor>
-  <description>The implementationClass values are metadata placeholders; no classes are compiled or shipped. Configuration metadata only; no compiled plugin, no IntelliJ runtime test, no JetBrains Marketplace publication, and no debugger integration. Runtime verification is R5+.</description>
+  <description>The implementationClass values are metadata placeholders; no classes are compiled or shipped. Configuration metadata only; no compiled plugin, no IntelliJ runtime test, no JetBrains Marketplace publication, and no debugger integration. The compiled plugin lives in the separate jetbrains-runtime subproject.</description>
   <depends>com.intellij.modules.platform</depends>
   <depends>org.jetbrains.plugins.textmate</depends>
   <extensions defaultExtensionNs="com.intellij">

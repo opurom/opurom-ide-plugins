@@ -4,13 +4,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { jdkTool } from '../jetbrains-runtime/build.mjs';
+import { jdkTool, hasJdk } from '../jetbrains-runtime/build.mjs';
 import { ensureArtifact, verifyArtifact } from '../jetbrains-runtime/verify.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const runtime = path.join(root, 'jetbrains-runtime');
 const artifact = ensureArtifact();
 const verified = verifyArtifact(artifact);
+const jdkAvailable = hasJdk();
 
 test('compiled plugin archive contains lib classes, plugin.xml and grammar', () => {
   assert.ok(fs.statSync(artifact).size > 0);
@@ -40,7 +41,7 @@ test('verify.mjs accepts the real archive and rejects a malformed one', () => {
   assert.throws(() => verifyArtifact(malformed), /lib\//);
 });
 
-test('Java LSP client frames didOpen/didChange and parses diagnostics', () => {
+test('Java LSP client frames didOpen/didChange and parses diagnostics', { skip: jdkAvailable ? false : 'no JDK 21 toolchain' }, () => {
   const testDir = path.join(runtime, 'build', 'test');
   fs.mkdirSync(testDir, { recursive: true });
   const jarPath = path.join(testDir, 'plugin.jar');

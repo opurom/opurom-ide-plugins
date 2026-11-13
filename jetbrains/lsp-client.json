@@ -11,5 +11,9 @@
   "siblingRepository": "../opurom-lsp",
   "siblingRepositoryRelativeTo": "repository root",
   "transport": "stdio",
-  "status": "Runtime client implementation and IntelliJ verification are R5+."
+  "pathOverride": {
+    "environmentVariable": "OPUROM_LSP_SERVER",
+    "description": "Set OPUROM_LSP_SERVER to the absolute path of the opurom-lsp stdio server to override the relative path above."
+  },
+  "status": "Configuration metadata for the sibling opurom-lsp stdio server; the IntelliJ runtime client lives in ../jetbrains-runtime."
 }

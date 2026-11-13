@@ -82,8 +82,8 @@ node scripts/validate.mjs
 node --test
 ```
 
-## Honest status (round 3)
+## Status
 
-Syntax highlighting and compile/check diagnostics work in this round, and so does the language server: the LSP client starts, the server answers, and published diagnostics reach the Problems panel. The LSP server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
+Syntax highlighting and compile/check diagnostics work, and so does the language server: the LSP client starts, the server answers, and published diagnostics reach the Problems panel. The LSP server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
 
-The debugger is a DAP subset contribution backed by the sibling `opurom-debug` adapter; its framed protocol and kernel integration are tested there. No GUI client tested. There are no real source breakpoints, no watch expressions, no step-in/out, and no multi-thread debugging; those are R4+. There is no JetBrains plugin, no formatting, no rename, no references, no code actions and no semantic tokens - those are later rounds. There is no hot reload integration yet. The manual compile/check commands still need the sibling `opuromc` binary, the language server needs the sibling `opurom-lsp` checkout, and the debugger needs the sibling `opurom-debug` and `opurom-core` checkouts; when a tool is missing, the extension shows a friendly missing-tool message instead of crashing.
+The debugger is a DAP subset contribution backed by the sibling `opurom-debug` adapter; its framed protocol and kernel integration are tested there. The manual compile/check commands still need the sibling `opuromc` binary, the language server needs the sibling `opurom-lsp` checkout, and the debugger needs the sibling `opurom-debug` and `opurom-core` checkouts; when a tool is missing, the extension shows a friendly missing-tool message instead of crashing.

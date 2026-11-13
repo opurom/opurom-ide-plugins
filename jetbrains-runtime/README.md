@@ -1,6 +1,6 @@
-# OPUROM JetBrains runtime plugin (round 9)
+# OPUROM JetBrains runtime plugin
 
-This subproject is a real compiled IntelliJ Platform plugin. It is separate from the unchanged R4 [JetBrains metadata](../jetbrains/README.md). Java sources compile against the IntelliJ SDK in the preferred Gradle build, or against local API stubs on the javac compiler classpath in the documented fallback. JDK 21 is the compiler toolchain; both builds emit Java 17 bytecode because ideaIC 2023.3.6 requires it. Stub classes are never packaged into the plugin JAR.
+This subproject is a real compiled IntelliJ Platform plugin. It is separate from the [JetBrains metadata](../jetbrains/README.md) directory. Java sources compile against the IntelliJ SDK in the preferred Gradle build, or against local API stubs on the javac compiler classpath in the documented fallback. JDK 21 is the compiler toolchain; both builds emit Java 17 bytecode because ideaIC 2023.3.6 requires it. Stub classes are never packaged into the plugin JAR.
 
 ## Contents
 
@@ -15,19 +15,36 @@ This subproject is a real compiled IntelliJ Platform plugin. It is separate from
 
 ## Build
 
-Preferred SDK-based build from this directory, using the verified toolchains and an in-repository Gradle home:
+Required toolchain: **JDK 21** (the compiler) and **Gradle 8.7 or newer** (the SDK build).
+Both builds emit Java 17 bytecode because ideaIC 2023.3.6 requires it.
+
+Preferred SDK-based build from this directory:
 
 ```sh
-export JAVA_HOME=/Users/mac/work/toolchains/jdk-download/jdk-21.0.13+9/Contents/Home
-export GRADLE_USER_HOME=/Users/mac/work/opurom/opurom-ide-plugins/.gradle-home
+export JAVA_HOME=<your JDK 21 home>
+export GRADLE_USER_HOME="$PWD/.gradle-home"
 export TMPDIR="$GRADLE_USER_HOME/tmp"
 mkdir -p "$TMPDIR"
-/Users/mac/work/toolchains/gradle-8.7/bin/gradle --no-daemon buildPlugin
+./gradlew --no-daemon buildPlugin
+```
+
+If your checkout has no Gradle wrapper, use a locally installed Gradle 8.7+ instead:
+
+```sh
+export JAVA_HOME=<your JDK 21 home>
+gradle --no-daemon buildPlugin
+```
+
+The fallback builder reads the same JDK 21 toolchain from `OPR_JDK_HOME` or `JAVA_HOME`:
+
+```sh
+export OPR_JDK_HOME=<your JDK 21 home>
+node build.mjs
 ```
 
 The expected artifact is `build/distributions/opurom-jetbrains-0.1.0.zip`. The ZIP contains a plugin directory with `lib/`, loose compiled `.class` files, a plugin JAR, `plugin.xml` and the `textmate/` grammar resource.
 
-If the IntelliJ SDK cannot be downloaded, the honest fallback is:
+If the IntelliJ SDK cannot be downloaded, the fallback builder is:
 
 ```sh
 node build.mjs
@@ -49,10 +66,11 @@ node --test
 
 ## Build outcome
 
-The SDK-based Gradle build succeeded. Gradle 8.7 running on JDK 21.0.13+9 resolved `org.jetbrains.intellij` 1.17.4 and ideaIC 2023.3.6, compiled all 15 Java sources, and `buildPlugin` produced `build/distributions/opurom-jetbrains-0.1.0.zip`. The first run emitted a `verifyPluginConfiguration` warning because Java 21 bytecode is incompatible with build 233; the final build uses JDK 21 with Java 17 bytecode (`major version: 61`) and that warning is gone. `verify.mjs` selected the Gradle ZIP: 24 outer entries, 16 loose `lib/` class files, `plugin.xml`, the grammar resource, and a 23-entry JAR with `META-INF/plugin.xml`. The final ZIP SHA-256 is `894d708c60d43b093f4d3a9c286cc764e70f8cae722d1bfad081fdbf864d4478`.
+The SDK-based Gradle build succeeded. Gradle 8.7 running on JDK 21.0.13+9 resolved `org.jetbrains.intellij` 1.17.4 and ideaIC 2023.3.6, compiled all 15 Java sources, and `buildPlugin` produced `build/distributions/opurom-jetbrains-0.1.0.zip`. The first run emitted a `verifyPluginConfiguration` warning because Java 21 bytecode is incompatible with build 233; the final build uses JDK 21 with Java 17 bytecode (`major version: 61`) and that warning is gone. `verify.mjs` selected the Gradle ZIP: 24 outer entries, 16 loose `lib/` class files, `plugin.xml`, the grammar resource, and a 23-entry JAR with `META-INF/plugin.xml`. The final ZIP SHA-256 is `0068eb2dd55791390f5f3c94bd14805c3f8f542e3b530f3acf8c6dcd67140a06`.
 
-The `build.mjs` fallback was also exercised with `javac --release 17` and produced `build/fallback/opurom-jetbrains-0.1.0.zip`; it is not the artifact selected by `verify.mjs`. No IntelliJ SDK download failure occurred, so no fallback failure reason applies and there is no fake Gradle success. The archive was NOT loaded inside a running IntelliJ IDE.
+The `build.mjs` fallback was also exercised with `javac --release 17` and produced `build/fallback/opurom-jetbrains-0.1.0.zip`; it is not the artifact selected by `verify.mjs`. No IntelliJ SDK download failure occurred, so no fallback failure reason applies and there is no fake Gradle success.
 
-## Honest scope
+## Verification scope
 
-The plugin archive was NOT loaded inside a running IntelliJ IDE. There is no marketplace publication, no runtime IDE verification, no plugin verifier run and no debugger UI. The startup activity starts a real LSP session but does not yet synchronize editor documents; the Java protocol client itself is tested outside the IDE. Editor document synchronization, plugin verifier runs, runtime IDE verification and marketplace publication are R10+.
+The plugin archive was not loaded inside a running IntelliJ IDE. The startup activity starts a
+real LSP session; the Java protocol client is tested outside the IDE.

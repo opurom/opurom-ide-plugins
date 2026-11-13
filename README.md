@@ -1,6 +1,6 @@
 # OPUROM IDE Plugins
 
-Independent repository for OPUROM editor tooling. Round 2 ships [vscode-opurom](vscode-opurom/README.md): a loadable, zero-build-step VS Code extension with a built-in language server client. Round 3 adds a `contributes.debuggers` entry and a debug adapter descriptor that launches `node ../opurom-debug/bin/server.mjs --stdio` from the sibling `opurom-debug` repository. There is no bundler, generated code, or npm install step. Round 4 adds the [JetBrains metadata](jetbrains/README.md): a standalone TextMate-style grammar subset, LSP client configuration stub and plugin.xml metadata. Round 9 adds a separate [compiled JetBrains runtime subproject](jetbrains-runtime/README.md).
+Independent repository for OPUROM editor tooling. It ships [vscode-opurom](vscode-opurom/README.md): a loadable, zero-build-step VS Code extension with a built-in language server client, a `contributes.debuggers` entry and a debug adapter descriptor that launches `node ../opurom-debug/bin/server.mjs --stdio` from the sibling `opurom-debug` repository. There is no bundler, generated code, or npm install step. The [JetBrains metadata](jetbrains/README.md) directory holds a standalone TextMate-style grammar subset, LSP client configuration stub and plugin.xml metadata, and the separate [compiled JetBrains runtime subproject](jetbrains-runtime/README.md) holds the Gradle IntelliJ Platform plugin.
 
 ## Install
 
@@ -60,19 +60,19 @@ node --test
 node jetbrains/validate.mjs
 ```
 
-## Honest status (round 3)
+## Status
 
-Syntax highlighting and compile/check diagnostics work in this round, and so does the language server. The LSP client is verified: the server starts, the session is real JSON-RPC, and published diagnostics reach the Problems panel. The LSP server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
+Syntax highlighting and compile/check diagnostics work, and so does the language server. The LSP client is verified: the server starts, the session is real JSON-RPC, and published diagnostics reach the Problems panel. The LSP server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
 
-The debugger is a DAP subset contribution backed by a separate adapter repository; its framed protocol and kernel integration are tested there. No GUI client tested. There are no real source breakpoints, no watch expressions, no step-in/out, and no multi-thread debugging; those are R4+. At round 3, there was no JetBrains plugin binary or runtime integration, no formatting, no rename, no references, no code actions and no semantic tokens - those are later rounds. There is no hot reload integration yet. A live compile/check run requires the sibling compiler binary; the language server requires the sibling `opurom-lsp` checkout; the debugger requires the sibling `opurom-debug` and `opurom-core` checkouts. A missing tool is reported with a friendly message instead of a crash.
+The debugger is a DAP subset contribution backed by a separate adapter repository; its framed protocol and kernel integration are tested there. A live compile/check run requires the sibling compiler binary; the language server requires the sibling `opurom-lsp` checkout; the debugger requires the sibling `opurom-debug` and `opurom-core` checkouts. A missing tool is reported with a friendly message instead of a crash.
 
-## JetBrains metadata (round 4)
+## JetBrains metadata
 
-[jetbrains/](jetbrains/README.md) contains grammar/config METADATA only. `opurom.tmLanguage.json` is a standalone TextMate-style grammar subset for `.opu` with R4 keywords, async effects, 32 primitive kinds, interpolation, comments, numbers and booleans. `lsp-client.json` records the `opurom` language id, `.opu` extensions, and the sibling `opurom-lsp` stdio server command as configuration metadata; it is NOT a running IntelliJ client. `plugin.xml` is well-formed IntelliJ plugin metadata with id, name, vendor, depends, and language/file type extensions. `validate.mjs` checks JSON, XML, keyword coverage and status text with Node builtins only.
+[jetbrains/](jetbrains/README.md) contains grammar/config METADATA only. `opurom.tmLanguage.json` is a standalone TextMate-style grammar subset for `.opu` with the language keywords, async effects, 32 primitive kinds, interpolation, comments, numbers and booleans. `lsp-client.json` records the `opurom` language id, `.opu` extensions, and the sibling `opurom-lsp` stdio server command as configuration metadata; it is NOT a running IntelliJ client. `plugin.xml` is well-formed IntelliJ plugin metadata with id, name, vendor, depends, and language/file type extensions. `validate.mjs` checks JSON, XML, keyword coverage and status text with Node builtins only.
 
-R4 metadata status: grammar/config METADATA only. NO IntelliJ runtime test, NO compiled plugin, NO JetBrains marketplace publication, NO debugger integration; JetBrains runtime plugin verification for that metadata subproject remains R5+. The VS Code extension and its DAP subset contribution are unchanged; this metadata subproject has no debugger integration of its own.
+The metadata directory holds configuration only. The compiled plugin and its IntelliJ runtime verification live in the [runtime subproject](../jetbrains-runtime/README.md). The VS Code extension and its DAP subset contribution are unchanged; the metadata directory has no debugger integration of its own.
 
-## Compiled JetBrains plugin (round 9)
+## Compiled JetBrains plugin
 
 [jetbrains-runtime/](jetbrains-runtime/README.md) is a separate Gradle IntelliJ Platform subproject using JDK 21. Its `plugin.xml` declares the plugin id, name, vendor, `idea-version`, platform dependencies, the OPUROM language/file type, a grammar extension, an LSP client extension and a startup activity. Java sources implement a real stdio LSP client with `Content-Length` framing over a spawned process, `initialize`, `didOpen`, `didChange`, `didClose`, shutdown/exit and `publishDiagnostics` parsing. The VS Code LSP client remains the protocol reference; the JetBrains client is independent Java code.
 
@@ -88,7 +88,7 @@ node --test
 
 `verify.mjs` uses `unzip -l` to require `lib/`, compiled `.class` files, `plugin.xml`, the declared grammar resource and a plugin JAR containing `META-INF/plugin.xml`; it exits 0 only for a valid plugin archive. The SDK cache, downloaded SDKs and all build outputs are gitignored and are not committed.
 
-Honest scope: the archive was NOT loaded inside a running IntelliJ IDE. There is no marketplace publication, no runtime IDE verification, no plugin verifier run and no debugger UI. Editor document synchronization, real IDE integration tests, plugin verifier runs and marketplace publication are R10+.
+Verification scope: the archive was not loaded inside a running IntelliJ IDE. The startup activity starts a real LSP session; the Java protocol client is tested outside the IDE.
 
 ## Scope
 

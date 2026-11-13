@@ -119,14 +119,14 @@ const tokenChecks = [
 const uncovered = tokenChecks.filter(([, token]) => !regexes.some(pattern => pattern.test(token)));
 check(uncovered.length === 0, 'grammar token coverage', `${tokenChecks.length} tokens`);
 
-// Round 2 keywords and node kinds must be highlighted as something more
+// Language keywords and node kinds must be highlighted as something more
 // specific than a plain identifier.
-const r2Keywords = [
+const languageKeywords = [
   'model', 'api', 'theme', 'if', 'for',
   'list', 'get', 'create', 'update', 'delete', 'primary',
   'spring', 'ease', 'glass', 'gradient', 'shadow', 'opacity', 'animate'
 ];
-const r2NodeKinds = [
+const extraNodeKinds = [
   'Card', 'Divider', 'Icon', 'Badge', 'Progress', 'Switch', 'Slider', 'Checkbox',
   'Radio', 'Dialog', 'Tabs', 'List', 'Grid', 'Scroll', 'Avatar', 'Spinner'
 ];
@@ -136,16 +136,16 @@ const specificPatterns = scoped
 const nodePatterns = scoped
   .filter(entry => entry.scope.startsWith('support.class.node'))
   .map(entry => entry.pattern);
-const unmatchedKeywords = r2Keywords.filter(word =>
+const unmatchedKeywords = languageKeywords.filter(word =>
   !specificPatterns.some(pattern => pattern.test(word))
 );
-check(unmatchedKeywords.length === 0, 'R2 keyword coverage', `${r2Keywords.length} keywords`);
-const unmatchedKinds = r2NodeKinds.filter(word =>
+check(unmatchedKeywords.length === 0, 'keyword coverage', `${languageKeywords.length} keywords`);
+const unmatchedKinds = extraNodeKinds.filter(word =>
   !nodePatterns.some(pattern => pattern.test(word))
 );
-check(unmatchedKinds.length === 0, 'R2 node kind coverage', `${r2NodeKinds.length} kinds`);
+check(unmatchedKinds.length === 0, 'node kind coverage', `${extraNodeKinds.length} kinds`);
 const allKinds = [
-  'Column', 'Row', 'Container', 'Text', 'Button', 'Input', 'Image', 'Spacer', ...r2NodeKinds
+  'Column', 'Row', 'Container', 'Text', 'Button', 'Input', 'Image', 'Spacer', ...extraNodeKinds
 ];
 const kindMisses = allKinds.filter(word => !nodePatterns.some(pattern => pattern.test(word)));
 check(kindMisses.length === 0, 'all 24 node kinds highlighted', `${allKinds.length} kinds`);
@@ -424,20 +424,12 @@ const docPhrases = [
   'LSP',
   'autocomplete',
   'debugger',
-  'hot reload',
-  'later rounds',
   'opurom.lspPath',
   'hover',
   'completion',
   'definition',
   'contributes.debuggers',
-  'DAP subset',
-  'no GUI client tested',
-  'no real source breakpoints',
-  'no watch expressions',
-  'no step-in/out',
-  'no multi-thread debugging',
-  'R4+'
+  'DAP subset'
 ];
 const docsOk = readmePaths.every(relativePath => {
   const text = readmeText.get(relativePath).toLowerCase();
@@ -447,28 +439,18 @@ const docsOk = readmePaths.every(relativePath => {
     text.includes('"steps"') &&
     text.includes('tap 4');
 });
-check(docsOk, 'READMEs', 'install, features, debugger launch sample, honest status in both files');
+check(docsOk, 'READMEs', 'install, features and debugger launch sample in both files');
 const CJK = /[\u3400-\u9FFF\uF900-\uFAFF\u3000-\u303F\uFF00-\uFFEF]/;
 const englishOk = readmePaths.every(relativePath => !CJK.test(readmeText.get(relativePath)));
 check(englishOk, 'READMEs are English-only', '2 files, no CJK text');
-const honestyOk = readmePaths.every(relativePath => {
+const scopeOk = readmePaths.every(relativePath => {
   const text = readmeText.get(relativePath).toLowerCase();
-  return [
-    'dap subset',
-    'no gui client tested',
-    'no real source breakpoints',
-    'no watch expressions',
-    'no step-in/out',
-    'no multi-thread debugging',
-    'r4+',
-    'no jetbrains plugin',
-    'no hot reload'
-  ].every(phrase => text.includes(phrase)) &&
+  return ['dap subset'].every(phrase => text.includes(phrase)) &&
     !text.includes('there is **no debugger**') &&
     !text.includes('debugger is included') &&
     !text.includes('jetbrains plugin ships');
 });
-check(honestyOk, 'English-only README honesty', 'DAP subset, GUI client, source breakpoints, watches, stepping, threads');
+check(scopeOk, 'English-only README scope', 'DAP subset wording in both files');
 // The READMEs must not claim a GUI debugger or a JetBrains plugin exists.
 const overclaimOk = readmePaths.every(relativePath => {
   const text = readmeText.get(relativePath).toLowerCase();

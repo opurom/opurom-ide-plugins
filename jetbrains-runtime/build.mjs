@@ -7,11 +7,11 @@ const base = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const artifactName = 'opurom-jetbrains-0.1.0.zip';
 const modulePath = fileURLToPath(import.meta.url);
 
-// shortcut: pinned R9 host JDK path, override with OPR_JDK_HOME on another host.
+// The JDK 21 toolchain comes from OPR_JDK_HOME or JAVA_HOME; without either,
+// the plain tool name is used so the host PATH decides.
 export function jdkTool(name) {
   const homes = [
     process.env.OPR_JDK_HOME,
-    '/Users/mac/work/toolchains/jdk-download/jdk-21.0.13+9/Contents/Home',
     process.env.JAVA_HOME
   ];
   for (const home of homes) {
@@ -20,6 +20,12 @@ export function jdkTool(name) {
     if (fs.existsSync(tool)) return tool;
   }
   return name;
+}
+
+// True when a JDK 21 toolchain is reachable through OPR_JDK_HOME, JAVA_HOME or PATH.
+export function hasJdk() {
+  const probe = spawnSync(jdkTool('javac'), ['-version'], { encoding: 'utf8' });
+  return probe.status === 0 && /javac 21/.test(String(probe.stderr || probe.stdout));
 }
 
 export function artifactCandidates() {
