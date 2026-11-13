@@ -2,7 +2,7 @@
 
 This directory is grammar/config METADATA only. It is NOT a running IntelliJ client. There is no compiled Java/Kotlin plugin, no Gradle build, no IntelliJ SDK runtime, no plugin verifier run, and no JetBrains Marketplace artifact.
 
-The compiled plugin and its IntelliJ runtime verification live in [../jetbrains-runtime/](../jetbrains-runtime/README.md). This directory declares no debugger integration.
+The compiled plugin and its IntelliJ runtime verification live in [jetbrains-runtime/](https://github.com/opurom/opurom-ide-plugins/blob/main/jetbrains-runtime/README.md). This directory declares no debugger integration.
 
 ## Contents
 

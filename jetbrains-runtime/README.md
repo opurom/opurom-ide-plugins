@@ -1,6 +1,6 @@
 # OPUROM JetBrains runtime plugin
 
-This subproject is a real compiled IntelliJ Platform plugin. It is separate from the [JetBrains metadata](../jetbrains/README.md) directory. Java sources compile against the IntelliJ SDK in the preferred Gradle build, or against local API stubs on the javac compiler classpath in the documented fallback. JDK 21 is the compiler toolchain; both builds emit Java 17 bytecode because ideaIC 2023.3.6 requires it. Stub classes are never packaged into the plugin JAR.
+This subproject is a real compiled IntelliJ Platform plugin. It is separate from the [JetBrains metadata](https://github.com/opurom/opurom-ide-plugins/blob/main/jetbrains/README.md) directory. Java sources compile against the IntelliJ SDK in the preferred Gradle build, or against local API stubs on the javac compiler classpath in the documented fallback. JDK 21 is the compiler toolchain; both builds emit Java 17 bytecode because ideaIC 2023.3.6 requires it. Stub classes are never packaged into the plugin JAR.
 
 ## Contents
 
