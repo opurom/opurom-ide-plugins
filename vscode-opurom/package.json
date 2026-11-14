@@ -19,6 +19,7 @@
     "onDebugResolve:opurom"
   ],
   "main": "./extension.js",
+  "icon": "./logo.png",
   "contributes": {
     "languages": [
       {
