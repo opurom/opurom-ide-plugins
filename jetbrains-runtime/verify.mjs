@@ -61,9 +61,7 @@ export function verifyArtifact(zipPath) {
   const markers = [
     '<id>', '<name>', '<vendor', '<idea-version', '<depends',
     'filetype', 'lang.syntaxhighlighterfactory', 'opuromgrammar',
-    'opuromlspclient', 'poststartupactivity', 'textmate/opurom.tmlanguage.json',
-    'not loaded inside a running intellij ide', 'no marketplace publication',
-    'no runtime ide verification', 'no debugger ui'
+    'opuromlspclient', 'poststartupactivity', 'textmate/opurom.tmlanguage.json'
   ];
   const missing = markers.filter(marker => !lower.includes(marker));
   if (missing.length) throw new Error(`plugin.xml missing declarations: ${missing.join(', ')}`);

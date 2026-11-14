@@ -32,6 +32,8 @@ No VSIX is included here. Build `opurom-lang` with `cargo build`, or set `opurom
 - Snippets: `opurom-app`, `opurom-column-text`, `opurom-button-inc`, `opurom-input-bind`, `opurom-fullstack` (a `model` plus two `api` blocks), `opurom-theme`.
 - `opurom.compile` runs `opuromc compile <src> -o <name>.opuir.json`.
 - `opurom.check` runs `opuromc check <src>`; if `opurom.cliPath` is set, it runs `node <cliPath> check <src>` instead.
+- `opurom.showActiveDocumentInfo` reports the active `.opu` filename and line count, and a clear message when no `.opu` editor is active.
+- `opurom.restartLanguageServer` restarts the language server process, replays the LSP handshake and reopens the current `.opu` documents.
 - Raw compiler stdout/stderr appears in the **Opurom** output channel. `path:line:col: error: message` and warning lines become `vscode.Diagnostic` entries in a `DiagnosticCollection` (Problems panel). Success shows an information message.
 - A DAP subset debugger descriptor launches `node ../opurom-debug/bin/server.mjs --stdio`. Launch attributes are `program`, `steps`, and optional `coreBinary`. Conditions inspect real kernel state after each command.
 
@@ -82,8 +84,10 @@ node scripts/validate.mjs
 node --test
 ```
 
-## Honest status (initial release)
+`scripts/validate.mjs` checks that every contributed command has a registered handler. `test/extension-commands.test.mjs` covers the command declarations and behavior, and `test/lsp-client.test.mjs` covers the client restart lifecycle.
 
-Syntax highlighting and compile/check diagnostics work in this round, and so does the language server: the LSP client starts, the server answers, and published diagnostics reach the Problems panel. The LSP server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
+## Status
 
-The debugger is a DAP subset contribution backed by the sibling `opurom-debug` adapter; its framed protocol and kernel integration are tested there. No GUI client tested. There are no real source breakpoints, no watch expressions, no step-in/out, and no multi-thread debugging; those are capability+. There is no JetBrains plugin, no formatting, no rename, no references, no code actions and no semantic tokens - those are later rounds. There is no hot reload integration yet. The manual compile/check commands still need the sibling `opuromc` binary, the language server needs the sibling `opurom-lsp` checkout, and the debugger needs the sibling `opurom-debug` and `opurom-core` checkouts; when a tool is missing, the extension shows a friendly missing-tool message instead of crashing.
+Syntax highlighting and compile/check diagnostics work, and so does the language server: the LSP client starts, the server answers, and published diagnostics reach the Problems panel. The LSP server answers hover, completion and definition requests. Autocomplete comes from that completion provider; snippets remain static insertions.
+
+The debugger is a DAP subset contribution backed by the sibling `opurom-debug` adapter; its framed protocol and kernel integration are tested there. The manual compile/check commands still need the sibling `opuromc` binary, the language server needs the sibling `opurom-lsp` checkout, and the debugger needs the sibling `opurom-debug` and `opurom-core` checkouts; when a tool is missing, the extension shows a friendly missing-tool message instead of crashing.

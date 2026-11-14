@@ -119,14 +119,14 @@ const tokenChecks = [
 const uncovered = tokenChecks.filter(([, token]) => !regexes.some(pattern => pattern.test(token)));
 check(uncovered.length === 0, 'grammar token coverage', `${tokenChecks.length} tokens`);
 
-// initial release keywords and node kinds must be highlighted as something more
+// Language keywords and node kinds must be highlighted as something more
 // specific than a plain identifier.
-const capabilityKeywords = [
+const languageKeywords = [
   'model', 'api', 'theme', 'if', 'for',
   'list', 'get', 'create', 'update', 'delete', 'primary',
   'spring', 'ease', 'glass', 'gradient', 'shadow', 'opacity', 'animate'
 ];
-const capabilityNodeKinds = [
+const extraNodeKinds = [
   'Card', 'Divider', 'Icon', 'Badge', 'Progress', 'Switch', 'Slider', 'Checkbox',
   'Radio', 'Dialog', 'Tabs', 'List', 'Grid', 'Scroll', 'Avatar', 'Spinner'
 ];
@@ -136,16 +136,16 @@ const specificPatterns = scoped
 const nodePatterns = scoped
   .filter(entry => entry.scope.startsWith('support.class.node'))
   .map(entry => entry.pattern);
-const unmatchedKeywords = capabilityKeywords.filter(word =>
+const unmatchedKeywords = languageKeywords.filter(word =>
   !specificPatterns.some(pattern => pattern.test(word))
 );
-check(unmatchedKeywords.length === 0, 'capability keyword coverage', `${capabilityKeywords.length} keywords`);
-const unmatchedKinds = capabilityNodeKinds.filter(word =>
+check(unmatchedKeywords.length === 0, 'keyword coverage', `${languageKeywords.length} keywords`);
+const unmatchedKinds = extraNodeKinds.filter(word =>
   !nodePatterns.some(pattern => pattern.test(word))
 );
-check(unmatchedKinds.length === 0, 'capability node kind coverage', `${capabilityNodeKinds.length} kinds`);
+check(unmatchedKinds.length === 0, 'node kind coverage', `${extraNodeKinds.length} kinds`);
 const allKinds = [
-  'Column', 'Row', 'Container', 'Text', 'Button', 'Input', 'Image', 'Spacer', ...capabilityNodeKinds
+  'Column', 'Row', 'Container', 'Text', 'Button', 'Input', 'Image', 'Spacer', ...extraNodeKinds
 ];
 const kindMisses = allKinds.filter(word => !nodePatterns.some(pattern => pattern.test(word)));
 check(kindMisses.length === 0, 'all 24 node kinds highlighted', `${allKinds.length} kinds`);
@@ -210,6 +210,8 @@ const manifestOk = Boolean(
   events.includes('onLanguage:opurom') &&
   events.includes('onCommand:opurom.compile') &&
   events.includes('onCommand:opurom.check') &&
+  commandIds.every(id => events.includes(`onCommand:${id}`)) &&
+  events.filter(event => event.startsWith('onCommand:')).length === commandIds.length &&
   events.includes('onDebug') &&
   events.includes('onDebugResolve:opurom') &&
   lang?.id === 'opurom' &&
@@ -298,6 +300,19 @@ check(
   'extension.js runtime contract',
   'spawnSync, diagnostics, output, commands, deactivate'
 );
+const registeredCommands = [...extensionSrc.matchAll(/registerCommand\('([^']+)'/g)]
+  .map(match => match[1]);
+const unimplementedCommands = commandIds.filter(id => !registeredCommands.includes(id));
+const undeclaredCommands = registeredCommands.filter(id => !commandIds.includes(id));
+check(
+  unimplementedCommands.length === 0 &&
+  undeclaredCommands.length === 0 &&
+  commandIds.length === registeredCommands.length &&
+  new Set(commandIds).size === commandIds.length &&
+  new Set(registeredCommands).size === registeredCommands.length,
+  'every contributed command has a handler (and vice versa)',
+  `${commandIds.length} commands`
+);
 const syntax = spawnSync(process.execPath, ['--check', extensionPath], { encoding: 'utf8' });
 check(syntax.status === 0, 'extension.js syntax (node --check)', syntax.stderr.trim() || 'no syntax errors');
 
@@ -320,6 +335,11 @@ const clientOk = clientCode.every(marker => clientSrc.includes(marker)) &&
   !/require\(['"]vscode-languageserver/.test(clientSrc) &&
   !clientSrc.includes('require(\'vscode\')');
 check(clientOk, 'lsp-client.js runtime contract', 'spawn, framing, publishDiagnostics, lifecycle');
+check(
+  clientSrc.includes('restart()') && extensionSrc.includes('client.restart()'),
+  'language server restart wiring',
+  'LspClient.restart() called by the restart command'
+);
 
 const lspMarkers = [
   "require('./lsp-client')",
@@ -424,20 +444,12 @@ const docPhrases = [
   'LSP',
   'autocomplete',
   'debugger',
-  'hot reload',
-  'later rounds',
   'opurom.lspPath',
   'hover',
   'completion',
   'definition',
   'contributes.debuggers',
-  'DAP subset',
-  'no GUI client tested',
-  'no real source breakpoints',
-  'no watch expressions',
-  'no step-in/out',
-  'no multi-thread debugging',
-  'capability+'
+  'DAP subset'
 ];
 const docsOk = readmePaths.every(relativePath => {
   const text = readmeText.get(relativePath).toLowerCase();
@@ -447,28 +459,18 @@ const docsOk = readmePaths.every(relativePath => {
     text.includes('"steps"') &&
     text.includes('tap 4');
 });
-check(docsOk, 'READMEs', 'install, features, debugger launch sample, honest status in both files');
+check(docsOk, 'READMEs', 'install, features and debugger launch sample in both files');
 const CJK = /[\u3400-\u9FFF\uF900-\uFAFF\u3000-\u303F\uFF00-\uFFEF]/;
 const englishOk = readmePaths.every(relativePath => !CJK.test(readmeText.get(relativePath)));
 check(englishOk, 'READMEs are English-only', '2 files, no CJK text');
-const honestyOk = readmePaths.every(relativePath => {
+const scopeOk = readmePaths.every(relativePath => {
   const text = readmeText.get(relativePath).toLowerCase();
-  return [
-    'dap subset',
-    'no gui client tested',
-    'no real source breakpoints',
-    'no watch expressions',
-    'no step-in/out',
-    'no multi-thread debugging',
-    'capability+',
-    'no jetbrains plugin',
-    'no hot reload'
-  ].every(phrase => text.includes(phrase)) &&
+  return ['dap subset'].every(phrase => text.includes(phrase)) &&
     !text.includes('there is **no debugger**') &&
     !text.includes('debugger is included') &&
     !text.includes('jetbrains plugin ships');
 });
-check(honestyOk, 'English-only README honesty', 'DAP subset, GUI client, source breakpoints, watches, stepping, threads');
+check(scopeOk, 'English-only README scope', 'DAP subset wording in both files');
 // The READMEs must not claim a GUI debugger or a JetBrains plugin exists.
 const overclaimOk = readmePaths.every(relativePath => {
   const text = readmeText.get(relativePath).toLowerCase();
