@@ -38,6 +38,32 @@ function compileRegex(pattern, label) {
   }
 }
 
+function readPng(bytes) {
+  const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (bytes.length < 24 || !bytes.subarray(0, 8).equals(signature) ||
+      bytes.toString('ascii', 12, 16) !== 'IHDR') return null;
+  const width = bytes.readUInt32BE(16);
+  const height = bytes.readUInt32BE(20);
+  let offset = 8;
+  let chunks = 0;
+  while (offset + 8 <= bytes.length) {
+    const length = bytes.readUInt32BE(offset);
+    const type = bytes.toString('ascii', offset + 4, offset + 8);
+    if (offset + 12 + length > bytes.length) return null;
+    offset += 12 + length;
+    chunks += 1;
+    if (type === 'IEND') {
+      return {
+        width,
+        height,
+        chunks,
+        complete: offset === bytes.length && bytes.readUInt32BE(bytes.length - 4) === 0xae426082
+      };
+    }
+  }
+  return null;
+}
+
 function collect(node, scopes, regexes, includes, scoped) {
   if (Array.isArray(node)) {
     for (const value of node) collect(value, scopes, regexes, includes, scoped);
@@ -319,6 +345,7 @@ check(
 );
 
 const extensionPath = path.join(ext, 'extension.js');
+const hoverCardsPath = path.join(ext, 'hover-cards.js');
 const extensionSrc = fs.readFileSync(extensionPath, 'utf8');
 const activateStart = extensionSrc.indexOf('function activate(context)');
 const deactivateStart = extensionSrc.indexOf('function deactivate()');
@@ -339,6 +366,8 @@ const requiredCode = [
   'new vscode.Diagnostic',
   'showInformationMessage',
   'showErrorMessage',
+  "require('./hover-cards')",
+  "registerHoverProvider('opurom'",
   "registerCommand('opurom.compile'",
   "registerCommand('opurom.check'",
   'not found at',
@@ -364,6 +393,12 @@ check(
 );
 const syntax = spawnSync(process.execPath, ['--check', extensionPath], { encoding: 'utf8' });
 check(syntax.status === 0, 'extension.js syntax (node --check)', syntax.stderr.trim() || 'no syntax errors');
+const hoverSyntax = spawnSync(process.execPath, ['--check', hoverCardsPath], { encoding: 'utf8' });
+check(
+  hoverSyntax.status === 0,
+  'hover-cards.js syntax (node --check)',
+  hoverSyntax.stderr.trim() || 'no syntax errors'
+);
 
 // The zero-dependency LSP client lives next to extension.js.
 const clientPath = path.join(ext, 'lsp-client.js');
@@ -447,8 +482,109 @@ check(
   typeof extension.deactivate === 'function' &&
   typeof extension.parseDiagnostics === 'function' &&
   typeof extension.defaultDebugServerPath === 'function' &&
-  typeof extension.debugAdapterDescriptor === 'function',
+  typeof extension.debugAdapterDescriptor === 'function' &&
+  typeof extension.createHoverProvider === 'function' &&
+  typeof extension.generateHoverCard === 'function',
   'CommonJS exports'
+);
+
+const componentCatalog = readJson('vscode-opurom/components.json');
+const hoverCards = require(hoverCardsPath);
+const catalogEntries = new Map(componentCatalog.components.map(
+  ([name, primitive, category, defaultProps]) => [name, { name, primitive, category, defaultProps }]
+));
+const catalogNames = hoverCards.componentNames;
+check(
+  componentCatalog.count === 240 &&
+  componentCatalog.components.length === 240 &&
+  catalogNames.length === 240 &&
+  new Set(catalogNames).size === 240,
+  'component catalog',
+  '240 unique hover-card names'
+);
+
+const cardsOk = catalogNames.every(name => {
+  const entry = catalogEntries.get(name);
+  const card = extension.generateHoverCard(name);
+  if (!card || !card.startsWith(`## ${name}\n`) || card.includes('\r')) return false;
+  const signatureLine = card.split('\n')[2] || '';
+  if (!signatureLine.startsWith(`\`component ${name}(`) ||
+      !signatureLine.includes(`-> ${entry.primitive}\``)) return false;
+  if (!card.includes(`A ${entry.category} component`) ||
+      !card.includes('**Default props**') || !card.includes('**Usage**')) return false;
+  const defaults = /```json\n([\s\S]*?)\n```/.exec(card);
+  if (!defaults) return false;
+  try {
+    if (JSON.stringify(JSON.parse(defaults[1])) !== JSON.stringify(entry.defaultProps)) return false;
+  } catch {
+    return false;
+  }
+  const usage = /```opu\n([\s\S]*?)\n```/.exec(card);
+  return Boolean(usage && usage[1].includes(`${name}(`) && usage[1].includes('app Preview {'));
+});
+check(cardsOk, 'component hover cards', `${catalogNames.length} complete Markdown cards`);
+check(
+  extension.generateHoverCard('NotAComponent') === null &&
+  extension.generateHoverCard(null) === null,
+  'unknown component hover cards',
+  'clear null result'
+);
+
+const freshCardScript = [
+  `const { componentNames, generateHoverCard } = require(${JSON.stringify(hoverCardsPath)});`,
+  'process.stdout.write(JSON.stringify(componentNames.map(generateHoverCard)));'
+].join('\n');
+const firstCardsRun = spawnSync(process.execPath, ['-e', freshCardScript]);
+const secondCardsRun = spawnSync(process.execPath, ['-e', freshCardScript]);
+const firstCards = firstCardsRun.stdout || Buffer.alloc(0);
+const secondCards = secondCardsRun.stdout || Buffer.alloc(0);
+check(
+  firstCardsRun.status === 0 && secondCardsRun.status === 0 &&
+  firstCards.length > 0 && firstCards.equals(secondCards),
+  'component hover cards are byte-identical across runs',
+  `${firstCards.length} bytes`
+);
+
+const hoverRegistrationOk = extensionSrc.includes(
+  "vscode.languages.registerHoverProvider('opurom', createHoverProvider(vscode))"
+) && pkg.activationEvents.includes('onLanguage:opurom');
+check(hoverRegistrationOk, 'hover provider registration', 'opurom language activation');
+class ValidationMarkdownString {
+  constructor(value) {
+    this.value = value;
+  }
+}
+class ValidationHover {
+  constructor(contents, range) {
+    this.contents = [contents];
+    this.range = range;
+  }
+}
+const validRange = { start: { line: 0, character: 0 }, end: { line: 0, character: 6 } };
+const hoverProvider = extension.createHoverProvider({
+  Hover: ValidationHover,
+  MarkdownString: ValidationMarkdownString
+});
+const providerHover = hoverProvider.provideHover({
+  getWordRangeAtPosition: () => validRange,
+  getText: () => 'VStack'
+}, { line: 0, character: 0 });
+check(
+  providerHover instanceof ValidationHover &&
+  providerHover.range === validRange &&
+  providerHover.contents[0] instanceof ValidationMarkdownString &&
+  providerHover.contents[0].value === extension.generateHoverCard('VStack'),
+  'hover provider surfaces the generated card',
+  'VStack MarkdownString'
+);
+check(
+  hoverProvider.provideHover({ getWordRangeAtPosition: () => null }, {}) === null &&
+  hoverProvider.provideHover({
+    getWordRangeAtPosition: () => validRange,
+    getText: () => 'NotAComponent'
+  }, {}) === null,
+  'hover provider returns no card for unknown names',
+  'clear null result'
 );
 const sample = [
   'counter.opu:3:7: error: unknown state "nope"',
@@ -533,6 +669,21 @@ const ignoreOk = ['.gitignore', 'vscode-opurom/.vscodeignore'].every(relativePat
   return ignorePatterns.every(pattern => text.includes(pattern));
 });
 check(ignoreOk, 'ignore files', '2 files, 3 patterns each');
+const iconPaths = [
+  'vscode-opurom/logo.png',
+  'jetbrains-runtime/src/main/resources/META-INF/pluginIcon.png',
+  'jetbrains-runtime/src/main/resources/META-INF/pluginIcon_dark.png'
+];
+const iconBuffers = iconPaths.map(relativePath => fs.readFileSync(path.join(root, relativePath)));
+const iconMetadata = iconBuffers.map(readPng);
+check(
+  iconBuffers.every(bytes => bytes.length > 1000 && bytes.equals(iconBuffers[0])) &&
+  iconMetadata.every(info =>
+    info && info.width === 256 && info.height === 256 && info.chunks >= 3 && info.complete
+  ),
+  'official extension icons',
+  `${iconPaths.length} valid, identical 256x256 PNGs`
+);
 
 validateJetbrains(check, root);
 validateRuntime(check, root);
