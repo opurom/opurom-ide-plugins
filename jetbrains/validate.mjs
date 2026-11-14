@@ -71,6 +71,9 @@ export function expandVsCode(body) {
   return (Array.isArray(body) ? body : [body])
     .join('\n')
     .replace(/\$\{\d+:([^}]*)\}/g, '$1')
+    // A choice placeholder keeps its first option, the same default a live
+    // template variable carries, so both editors expand it identically.
+    .replace(/\$\{\d+\|([^,|}]*)[^}]*\}/g, '$1')
     .replace(/\$0/g, '')
     .replace(/\n$/, '');
 }
@@ -419,7 +422,10 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
   check(lspOk, 'JetBrains LSP config metadata', 'command, args, language id, extensions, sibling server');
 
   const liveTemplates = readLiveTemplates(rootDir);
-  const templateNames = ['if', 'ifelse', 'theme'];
+  const templateNames = [
+    'if', 'ifelse', 'theme', 'opurom-app', 'opurom-column-text',
+    'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme'
+  ];
   const templates = templateNames.map(name => liveTemplates.get(name));
   const liveTemplatesOk = liveTemplates.size === templateNames.length &&
     templates.every(template => template?.value && template.description && template.context) &&
@@ -428,7 +434,8 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
     templates[0]?.variables.THEN === 'Text("Visible")' &&
     templates[1]?.variables.ELSE === 'Text("Hidden")' &&
     expandJetBrains(templates[2]) === 'theme { accent: "#097FEB", radius: 12 }';
-  check(liveTemplatesOk, 'JetBrains live templates', `${liveTemplates.size} conditional and theme templates`);
+  check(liveTemplatesOk, 'JetBrains live templates',
+    `${liveTemplates.size} templates mirroring every VS Code snippet`);
 
   const fileExtensionOk = Boolean(
     Array.isArray(grammar.fileTypes) && grammar.fileTypes.includes('opu') &&

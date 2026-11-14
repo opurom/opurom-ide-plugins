@@ -193,21 +193,26 @@ const scaffoldOk = Boolean(
 );
 check(scaffoldOk, 'full-stack snippet scaffold', 'model + api + handlers');
 
-const conditionalPrefixes = ['if', 'ifelse', 'theme'];
-const conditionalSnippets = conditionalPrefixes.map(prefix =>
+// Every VS Code snippet must keep a JetBrains live template that expands to the
+// same source text, so neither editor's completion falls behind the other.
+const parityPrefixes = [
+  'if', 'ifelse', 'theme', 'opurom-app', 'opurom-column-text',
+  'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme'
+];
+const paritySnippets = parityPrefixes.map(prefix =>
   snippetEntries.find(entry => entry.prefix === prefix)
 );
-const canonicalSnippets = conditionalSnippets.map(snippet => snippet && expandVsCode(snippet.body));
+const canonicalSnippets = paritySnippets.map(snippet => snippet && expandVsCode(snippet.body));
 const liveTemplates = readLiveTemplates(root);
-const canonicalTemplates = conditionalPrefixes.map(prefix => {
+const canonicalTemplates = parityPrefixes.map(prefix => {
   const template = liveTemplates.get(prefix);
   return template && expandJetBrains(template);
 });
-const conditionalOk = conditionalSnippets.every(Boolean) &&
-  conditionalSnippets[0].body.some(line => line.includes('if (${1:state}) {')) &&
-  conditionalSnippets[0].body.some(line => line.includes('${2:')) &&
-  conditionalSnippets[1].body.some(line => line.includes('} else {')) &&
-  conditionalSnippets[1].body.some(line => line.includes('${3:')) &&
+const parityOk = paritySnippets.every(Boolean) &&
+  paritySnippets[0].body.some(line => line.includes('if (${1:state}) {')) &&
+  paritySnippets[0].body.some(line => line.includes('${2:')) &&
+  paritySnippets[1].body.some(line => line.includes('} else {')) &&
+  paritySnippets[1].body.some(line => line.includes('${3:')) &&
   canonicalSnippets.every((body, index) => body === canonicalTemplates[index]) &&
   canonicalSnippets[0] === ['if (state) {', '\tText("Visible")', '}'].join('\n') &&
   canonicalSnippets[1] === [
@@ -218,7 +223,8 @@ const conditionalOk = conditionalSnippets.every(Boolean) &&
     '}'
   ].join('\n') &&
   canonicalSnippets[2] === 'theme { accent: "#097FEB", radius: 12 }';
-check(conditionalOk, 'conditional snippets', `${conditionalPrefixes.length} consistent VS Code and JetBrains bodies`);
+check(parityOk, 'VS Code snippets match JetBrains live templates',
+  `${parityPrefixes.length} consistent bodies`);
 
 const versionParts = String(pkg.version || '').split('.');
 const contributes = pkg.contributes || {};
