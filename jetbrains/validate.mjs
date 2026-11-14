@@ -434,7 +434,7 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
   const templateNames = [
     'if', 'ifelse', 'theme', 'opurom-app', 'opurom-column-text',
     'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme',
-    'opurom-particles'
+    'opurom-particles', 'opurom-feedback-overlay'
   ];
   const templates = templateNames.map(name => liveTemplates.get(name));
   const liveTemplatesOk = liveTemplates.size === templateNames.length &&

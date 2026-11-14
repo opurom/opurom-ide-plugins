@@ -246,7 +246,7 @@ test('conditional snippets include tab stops, both branches and the default them
 test('every VS Code snippet has a JetBrains live template with the same body', () => {
   const prefixes = ['if', 'ifelse', 'theme', 'opurom-app', 'opurom-column-text',
     'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme',
-    'opurom-particles'];
+    'opurom-particles', 'opurom-feedback-overlay'];
   for (const prefix of prefixes) {
     const entry = Object.values(vscodeSnippets).find(snippet => snippet.prefix === prefix);
     assert.ok(entry, `${prefix} VS Code snippet exists`);

@@ -238,7 +238,7 @@ check(scaffoldOk, 'full-stack snippet scaffold', 'model + api + handlers');
 const parityPrefixes = [
   'if', 'ifelse', 'theme', 'opurom-app', 'opurom-column-text',
   'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme',
-  'opurom-particles'
+  'opurom-particles', 'opurom-feedback-overlay'
 ];
 const paritySnippets = parityPrefixes.map(prefix =>
   snippetEntries.find(entry => entry.prefix === prefix)
@@ -484,7 +484,8 @@ check(
   typeof extension.defaultDebugServerPath === 'function' &&
   typeof extension.debugAdapterDescriptor === 'function' &&
   typeof extension.createHoverProvider === 'function' &&
-  typeof extension.generateHoverCard === 'function',
+  typeof extension.generateHoverCard === 'function' &&
+  typeof extension.generatePropHoverCard === 'function',
   'CommonJS exports'
 );
 
@@ -495,12 +496,12 @@ const catalogEntries = new Map(componentCatalog.components.map(
 ));
 const catalogNames = hoverCards.componentNames;
 check(
-  componentCatalog.count === 240 &&
-  componentCatalog.components.length === 240 &&
-  catalogNames.length === 240 &&
-  new Set(catalogNames).size === 240,
+  componentCatalog.count === 260 &&
+  componentCatalog.components.length === 260 &&
+  catalogNames.length === 260 &&
+  new Set(catalogNames).size === 260,
   'component catalog',
-  '240 unique hover-card names'
+  '260 unique hover-card names'
 );
 
 const cardsOk = catalogNames.every(name => {
@@ -530,6 +531,47 @@ check(
   'clear null result'
 );
 
+const designPropNames = Object.keys(hoverCards.designProps);
+const designPropGrammar = Object.entries(hoverCards.designProps).map(
+  ([prop, { values }]) => `\`${prop}: ${values.join('|')}\``
+);
+const designPropDefaults = Object.values(hoverCards.designProps).map(
+  ({ defaultValue }) => `default \`${defaultValue}\``
+);
+const designPropUsage = [
+  '```opu',
+  'app Preview {',
+  '  Button("Save", state: hover, variant: primary, tone: info)',
+  '}',
+  '```'
+].join('\n');
+const designPropCards = designPropNames.map(name => hoverCards.generatePropHoverCard(name));
+const designPropOk = designPropNames.length === 3 &&
+  designPropCards.every(Boolean) &&
+  designPropGrammar.every(line => designPropCards.every(card => card.includes(line))) &&
+  designPropDefaults.every(line => designPropCards.every(card => card.includes(line))) &&
+  Object.values(hoverCards.designProps).every(({ values }) =>
+    values.every(value => designPropCards.every(card => card.includes(value)))) &&
+  designPropCards.every(card =>
+    card.includes('Unknown values are compile-time errors') && card.includes(designPropUsage)) &&
+  designPropNames.every(name => extension.generateHoverCard(name) === null) &&
+  hoverCards.generatePropHoverCard('NotAProp') === null &&
+  hoverCards.generatePropHoverCard('pressed') === null;
+check(designPropOk, 'design-system prop hover cards',
+  '3 props, all values, defaults, errors, usage');
+
+const feedbackOverlayNames = catalogNames.slice(240);
+const feedbackOverlaySnippet = snippetEntries.find(entry => entry.prefix === 'opurom-feedback-overlay');
+const feedbackOverlayChoices = /\$\{1\|([^|]+)\|\}/.exec(
+  feedbackOverlaySnippet?.body.join('\n') || ''
+);
+const feedbackOverlayChoiceNames = feedbackOverlayChoices?.[1].split(',') || [];
+const feedbackOverlayOk = feedbackOverlayNames.length === 20 &&
+  feedbackOverlayChoiceNames.length === 20 &&
+  feedbackOverlayChoiceNames.every((name, index) => name === feedbackOverlayNames[index]) &&
+  feedbackOverlayNames.every(name => snippetText.includes(name));
+check(feedbackOverlayOk, 'feedback/overlay completion snippet', '20 source catalog names');
+
 const freshCardScript = [
   `const { componentNames, generateHoverCard } = require(${JSON.stringify(hoverCardsPath)});`,
   'process.stdout.write(JSON.stringify(componentNames.map(generateHoverCard)));'
@@ -545,10 +587,13 @@ check(
   `${firstCards.length} bytes`
 );
 
-const hoverRegistrationOk = extensionSrc.includes(
+const hoverRegistrationCount = (
+  extensionSrc.match(/registerHoverProvider\('opurom'/g) || []
+).length;
+const hoverRegistrationOk = hoverRegistrationCount === 1 && extensionSrc.includes(
   "vscode.languages.registerHoverProvider('opurom', createHoverProvider(vscode))"
 ) && pkg.activationEvents.includes('onLanguage:opurom');
-check(hoverRegistrationOk, 'hover provider registration', 'opurom language activation');
+check(hoverRegistrationOk, 'hover provider registration', 'one opurom provider, language activation');
 class ValidationMarkdownString {
   constructor(value) {
     this.value = value;
@@ -585,6 +630,22 @@ check(
   }, {}) === null,
   'hover provider returns no card for unknown names',
   'clear null result'
+);
+const designPropWords = ['state', 'variant', 'tone', 'default', 'primary', 'info'];
+check(
+  designPropWords.every(word => {
+    const hover = hoverProvider.provideHover({
+      getWordRangeAtPosition: () => validRange,
+      getText: () => word
+    }, {});
+    return hover instanceof ValidationHover &&
+      hover.contents[0].value === hoverCards.generatePropHoverCard(word);
+  }) && hoverProvider.provideHover({
+    getWordRangeAtPosition: () => validRange,
+    getText: () => 'pressed'
+  }, {}) === null,
+  'hover provider surfaces design-system prop cards',
+  'same opurom provider, 6 documented tokens'
 );
 const sample = [
   'counter.opu:3:7: error: unknown state "nope"',

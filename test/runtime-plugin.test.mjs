@@ -9,11 +9,12 @@ import { ensureArtifact, verifyArtifact } from '../jetbrains-runtime/verify.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const runtime = path.join(root, 'jetbrains-runtime');
-const artifact = ensureArtifact();
-const verified = verifyArtifact(artifact);
 const jdkAvailable = hasJdk();
+const skip = jdkAvailable ? false : 'no JDK 21 toolchain';
+const artifact = jdkAvailable ? ensureArtifact() : null;
+const verified = jdkAvailable ? verifyArtifact(artifact) : null;
 
-test('compiled plugin archive contains lib classes, plugin.xml and grammar', () => {
+test('compiled plugin archive contains lib classes, plugin.xml and grammar', { skip }, () => {
   assert.ok(fs.statSync(artifact).size > 0);
   assert.ok(verified.entries.some(entry => entry.includes('/lib/')));
   assert.ok(verified.classEntries.some(entry => entry.endsWith('opurom/jetbrains/LspClient.class')));
@@ -22,7 +23,7 @@ test('compiled plugin archive contains lib classes, plugin.xml and grammar', () 
   assert.ok(verified.jarEntries.some(entry => entry.endsWith('META-INF/plugin.xml')));
 });
 
-test('verify.mjs accepts the real archive and rejects a malformed one', () => {
+test('verify.mjs accepts the real archive and rejects a malformed one', { skip }, () => {
   const cli = spawnSync(process.execPath, [path.join(runtime, 'verify.mjs')], {
     encoding: 'utf8',
     cwd: root
@@ -41,7 +42,7 @@ test('verify.mjs accepts the real archive and rejects a malformed one', () => {
   assert.throws(() => verifyArtifact(malformed), /lib\//);
 });
 
-test('Java LSP client frames didOpen/didChange and parses diagnostics', { skip: jdkAvailable ? false : 'no JDK 21 toolchain' }, () => {
+test('Java LSP client frames didOpen/didChange and parses diagnostics', { skip }, () => {
   const testDir = path.join(runtime, 'build', 'test');
   fs.mkdirSync(testDir, { recursive: true });
   const jarPath = path.join(testDir, 'plugin.jar');
