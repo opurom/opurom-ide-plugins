@@ -71,8 +71,11 @@ export function validateRuntime(check = defaultCheck, rootDir = defaultRoot) {
     path.join(rootDir, 'test', 'runtime-plugin.test.mjs'),
     path.join(rootDir, 'scripts', 'validate.mjs')
   ];
-  const englishOk = sourceFiles.every(file => !CJK.test(readText(file)));
-  check(englishOk, 'runtime sources are English-only', `${sourceFiles.length} files, no CJK text`);
+  // Binary image assets carry arbitrary bytes, not source text; the English-only
+  // rule applies to text sources, so skip raster images when scanning.
+  const textSources = sourceFiles.filter(file => !/\.(?:png|jpg|jpeg|gif|webp|ico)$/i.test(file));
+  const englishOk = textSources.every(file => !CJK.test(readText(file)));
+  check(englishOk, 'runtime sources are English-only', `${textSources.length} files, no CJK text`);
 
   const jsFiles = [
     ...walkFiles(runtime).filter(file => /\.(?:js|mjs)$/.test(file)),
