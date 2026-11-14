@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { validateJetbrains } from '../jetbrains/validate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ext = path.join(root, 'vscode-opurom');
@@ -479,5 +480,7 @@ const ignoreOk = ['.gitignore', 'vscode-opurom/.vscodeignore'].every(relativePat
   return ignorePatterns.every(pattern => text.includes(pattern));
 });
 check(ignoreOk, 'ignore files', '2 files, 3 patterns each');
+
+validateJetbrains(check, root);
 
 console.log('PASS opurom-ide-plugins validation');
