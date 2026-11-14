@@ -25,6 +25,7 @@ No VSIX is shipped in this repository. Build `opurom-lang` (`cargo build`) or se
 - Ten snippets: new app, Column with Text, Button with `+= 1`, bound Input, a full-stack `model` plus `api` scaffold, a configurable theme block, `if` and `ifelse` conditional rendering, the canonical `theme` block, and a particles field Container with `particles:` and `animate:`.
 - `Opurom: Compile Opurom to IR` writes `<name>.opuir.json` beside the source.
 - `Opurom: Check Opurom file` runs `opuromc check`, or `opurom check` through `opurom.cliPath` when configured.
+- `Opurom: Run Opurom (compile and debug)` compiles the active `.opu` to IR, then launches the Opurom debug adapter on that IR in one step. It binds to `F5` when the active document is an `.opu` file.
 - `Opurom: Show active Opurom document info` reports the filename and line count of the active `.opu` document, and a clear message when no `.opu` editor is active.
 - `Opurom: Restart Opurom language server` restarts the language server process, replays the LSP handshake and reopens the current `.opu` documents.
 - Compiler output goes to the Opurom output channel; `path:line:col: error: message` and warning lines become Problems-panel diagnostics. Success shows an information message.
