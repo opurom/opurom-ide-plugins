@@ -361,8 +361,8 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
   const languageKeywords = [
     'app', 'state', 'model', 'api', 'theme', 'import', 'component', 'computed',
     'page', 'push', 'if', 'else', 'for', 'in', 'async', 'await',
-    'list', 'get', 'create', 'update', 'delete', 'primary', 'delay', 'fetch',
-    'spring', 'ease', 'glass', 'gradient', 'shadow', 'opacity', 'animate',
+    'list', 'get', 'create', 'update', 'delete', 'primary', 'delay', 'fetch', 'validate',
+    'spring', 'ease', 'inertia', 'collision', 'glass', 'gradient', 'shadow', 'opacity', 'animate',
     'true', 'false'
   ];
   const missedKeywords = languageKeywords.filter(word =>

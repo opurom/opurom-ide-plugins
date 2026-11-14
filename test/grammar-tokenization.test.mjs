@@ -330,3 +330,33 @@ test('the particles snippet keeps its seeded field prop and animation in every g
     assert.equal(effect?.scope, 'support.constant.effect.opurom', `${label} spring effect`);
   }
 });
+
+// The built-in form verb and the physics curves carry their own scopes, so
+// they are checked separately from the control keywords above.
+test('all three grammars highlight the form verb and animate curves', () => {
+  const source = [
+    'app Demo {',
+    '  Button("Go", animate: collision) { form.validate() }',
+    '  Text("x", animate: inertia)',
+    '  Input(required: true, minLength: 3, maxLength: 12, pattern: "[a-z]+")',
+    '}'
+  ].join('\n');
+  const expected = {
+    validate: 'keyword.control.verb.opurom',
+    collision: 'support.constant.effect.opurom',
+    inertia: 'support.constant.effect.opurom',
+    required: 'variable.parameter.prop.opurom',
+    minLength: 'variable.parameter.prop.opurom',
+    maxLength: 'variable.parameter.prop.opurom',
+    pattern: 'variable.parameter.prop.opurom'
+  };
+  for (const [label, relativePath] of grammars) {
+    const scopeByWord = new Map();
+    for (const { text, scope } of tokenize(load(relativePath), source)) {
+      if (Object.hasOwn(expected, text)) scopeByWord.set(text, scope);
+    }
+    for (const [word, scope] of Object.entries(expected)) {
+      assert.equal(scopeByWord.get(word), scope, `${label}: ${word} scope`);
+    }
+  }
+});
