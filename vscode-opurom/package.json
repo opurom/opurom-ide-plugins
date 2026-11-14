@@ -12,6 +12,7 @@
     "onLanguage:opurom",
     "onCommand:opurom.compile",
     "onCommand:opurom.check",
+    "onCommand:opurom.run",
     "onCommand:opurom.showActiveDocumentInfo",
     "onCommand:opurom.restartLanguageServer",
     "onDebug",
@@ -52,6 +53,11 @@
         "category": "OPUROM"
       },
       {
+        "command": "opurom.run",
+        "title": "Run OPUROM (compile and debug)",
+        "category": "OPUROM"
+      },
+      {
         "command": "opurom.showActiveDocumentInfo",
         "title": "Show active OPUROM document info",
         "category": "OPUROM"
@@ -60,6 +66,13 @@
         "command": "opurom.restartLanguageServer",
         "title": "Restart OPUROM language server",
         "category": "OPUROM"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "opurom.run",
+        "key": "F5",
+        "when": "editorLangId == opurom"
       }
     ],
     "debuggers": [

@@ -26,7 +26,31 @@ test('both editor commands are declared with titles, activation events and handl
     assert.ok(pkg.activationEvents.includes(`onCommand:${id}`), `${id} activates on invocation`);
     assert.ok(extensionSrc.includes(`registerCommand('${id}'`), `${id} is registered`);
   }
-  assert.equal(pkg.contributes.commands.length, 4);
+  assert.equal(pkg.contributes.commands.length, 5);
+});
+
+test('the run command is declared, activates and is registered with an F5 binding', () => {
+  const command = pkg.contributes.commands.find(entry => entry.command === 'opurom.run');
+  assert.ok(command, 'opurom.run is contributed');
+  assert.equal(command.title, 'Run OPUROM (compile and debug)');
+  assert.equal(command.category, 'OPUROM');
+  assert.ok(pkg.activationEvents.includes('onCommand:opurom.run'), 'opurom.run activates on invocation');
+  assert.ok(extensionSrc.includes("registerCommand('opurom.run'"), 'opurom.run is registered');
+  const binding = pkg.contributes.keybindings.find(entry => entry.command === 'opurom.run');
+  assert.ok(binding, 'opurom.run has a keybinding');
+  assert.equal(binding.key, 'F5');
+  assert.equal(binding.when, 'editorLangId == opurom');
+  assert.ok(typeof extension.runAndDebug === 'function', 'runAndDebug is exported');
+});
+
+test('runAndDebug refuses to start without an active saved .opu editor', async () => {
+  for (const editor of [null, { document: { isUntitled: true, isDirty: false } }]) {
+    const vscode = fakeVscode(editor);
+    vscode.window.showErrorMessage = message => vscode.messages.push(message);
+    await extension.runAndDebug(vscode, { appendLine: () => {} }, new Map());
+    assert.equal(vscode.messages.length, 1);
+    assert.match(vscode.messages[0], /\.opu/);
+  }
 });
 
 function fakeVscode(editor) {

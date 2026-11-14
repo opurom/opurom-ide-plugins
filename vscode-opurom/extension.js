@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { LspClient, defaultLspPath } = require('./lsp-client');
 
@@ -145,7 +146,7 @@ async function run(vscode, output, diagnostics, mode) {
     vscode.window.showInformationMessage(
       `OPUROM ${mode} succeeded for ${path.basename(file)}${suffix}`
     );
-    return;
+    return true;
   }
   const summary = errors
     ? `${errors} OPUROM ${errors === 1 ? 'error' : 'errors'}`
@@ -154,6 +155,37 @@ async function run(vscode, output, diagnostics, mode) {
   vscode.window.showErrorMessage(
     `OPUROM ${mode} failed: ${summary}. See the OPUROM output channel.`
   );
+}
+
+// One-click run: compile the active .opu to its IR, then launch the OPUROM
+// debug adapter on that IR. Reuses the compile path so diagnostics and the
+// compile step stay identical to `opurom.compile`.
+async function runAndDebug(vscode, output, diagnostics) {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.isUntitled) {
+    vscode.window.showErrorMessage('Open a saved .opu file before running an OPUROM command.');
+    return;
+  }
+  if (editor.document.isDirty && !(await editor.document.save())) {
+    vscode.window.showErrorMessage('Save the .opu file before running an OPUROM command.');
+    return;
+  }
+  const file = editor.document.uri.fsPath;
+  const compiled = await run(vscode, output, diagnostics, 'compile');
+  if (!compiled) return;
+  const irPath = path.join(path.dirname(file), path.basename(file, '.opu') + '.opuir.json');
+  const folder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
+  if (!folder) {
+    vscode.window.showErrorMessage('No workspace folder to launch the OPUROM debugger in.');
+    return;
+  }
+  const started = await vscode.debug.startDebugging(
+    folder.uri,
+    { type: 'opurom', request: 'launch', name: 'OPUROM', program: irPath, steps: [] }
+  );
+  if (!started) {
+    vscode.window.showErrorMessage('The OPUROM debugger did not start. Check the OPUROM output channel.');
+  }
 }
 
 // Holds the running language server for the lifetime of the extension.
@@ -296,6 +328,7 @@ function activate(context) {
     diagnostics,
     vscode.commands.registerCommand('opurom.compile', () => run(vscode, output, diagnostics, 'compile')),
     vscode.commands.registerCommand('opurom.check', () => run(vscode, output, diagnostics, 'check')),
+    vscode.commands.registerCommand('opurom.run', () => runAndDebug(vscode, output, diagnostics)),
     vscode.commands.registerCommand('opurom.showActiveDocumentInfo', () => showActiveDocumentInfo(vscode)),
     vscode.commands.registerCommand('opurom.restartLanguageServer', () =>
       restartLanguageServer(vscode, output, languageServer)
@@ -331,5 +364,6 @@ module.exports = {
   debugAdapterDescriptor,
   showActiveDocumentInfo,
   restartLanguageServer,
+  runAndDebug,
   toolFor
 };
