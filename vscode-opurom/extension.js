@@ -5,6 +5,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { LspClient, defaultLspPath } = require('./lsp-client');
+const { createHoverProvider, generateHoverCard } = require('./hover-cards');
 
 const DIAGNOSTIC_RE = /^(.+?):(\d+):(\d+):\s*(error|warning):\s*(.+)$/;
 
@@ -319,8 +320,9 @@ function restartLanguageServer(vscode, output, client) {
   vscode.window.showInformationMessage('OPUROM language server restarted.');
 }
 
+// The optional API keeps activation testable outside the extension host.
 function activate(context) {
-  const vscode = require('vscode');
+  const vscode = arguments[1] || context.vscode || require('vscode');
   const output = vscode.window.createOutputChannel('OPUROM');
   const diagnostics = vscode.languages.createDiagnosticCollection('opurom');
   context.subscriptions.push(
@@ -333,6 +335,9 @@ function activate(context) {
     vscode.commands.registerCommand('opurom.restartLanguageServer', () =>
       restartLanguageServer(vscode, output, languageServer)
     )
+  );
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider('opurom', createHoverProvider(vscode))
   );
   const debugServer = defaultDebugServerPath();
   if (!fs.existsSync(debugServer)) {
@@ -365,5 +370,7 @@ module.exports = {
   showActiveDocumentInfo,
   restartLanguageServer,
   runAndDebug,
-  toolFor
+  toolFor,
+  createHoverProvider,
+  generateHoverCard
 };
