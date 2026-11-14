@@ -55,7 +55,7 @@
     },
     "node-kinds": {
       "name": "support.class.node.opurom",
-      "match": "\\b(?:Column|Row|Container|Text|Button|Input|Image|Spacer|Card|Divider|Icon|Badge|Progress|Switch|Slider|Checkbox|Radio|Dialog|Tabs|List|Grid|Scroll|Avatar|Spinner)\\b"
+      "match": "\\b(?:Column|Row|Container|Text|Button|Input|Image|Spacer|Card|Divider|Icon|Badge|Progress|Switch|Slider|Checkbox|Radio|Dialog|Tabs|List|Grid|Scroll|Avatar|Spinner|Table|Chart|Calendar|RichText|Player|Map|Menu|Tooltip|Gauge|Sparkline|AreaChart|PieChart|DonutChart|ScatterPlot|StackedBar|Histogram|Heatmap|Treemap|Waterfall|BulletChart|FunnelChart|Waveform|Equalizer|Candlestick|BubbleChart|PolarChart|Breadcrumbs|Pagination|Stepper|Sidebar|TabStrip|NavRail|AnchorBar|ProgressSteps|MenuBar|TocTree|Rating|Dial|Knob|ColorWell|DateField|TimeField|SelectBox|ComboBox|SearchBar|PinInput|SegmentedInput|UploadZone|WaveformPlayer|Spectrogram|Filmstrip|ThumbnailGrid|QrGlyph|BarcodeGlyph|ColorPalette|ZoomLens|LevelMeter|SignalBars|BatteryMeter|Thermometer|Speedometer|Compass|ProgressRing|ActivityRing|KpiTile|StatCard|CornerFrame|CrosshairMark|LadderDivider|ChevronDivider|GridOverlay|CheckerBackdrop|DotPattern|RingBadge|StairDivider|BracketPanel)\\b"
     },
     "numbers": {
       "name": "constant.numeric.opurom",

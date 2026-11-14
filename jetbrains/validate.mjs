@@ -375,13 +375,21 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
     'Radio', 'Dialog', 'Tabs', 'List', 'Grid', 'Scroll', 'Avatar', 'Spinner'
   ];
   const extraKinds = ['Table', 'Chart', 'Calendar', 'RichText', 'Player', 'Map', 'Menu', 'Tooltip'];
-  const allKinds = [...legacyKinds, ...extraKinds];
+  // Extended primitive kinds (charts, meters, inputs) must highlight too.
+  const extendedKinds = [
+    'Gauge', 'Sparkline', 'PieChart', 'Candlestick', 'Heatmap', 'FunnelChart',
+    'Breadcrumbs', 'Stepper', 'Sidebar', 'MenuBar', 'Rating', 'DateField',
+    'SearchBar', 'UploadZone', 'QrGlyph', 'Speedometer', 'Compass', 'KpiTile'
+  ];
+  const allKinds = [...legacyKinds, ...extraKinds, ...extendedKinds];
   const nodePatterns = scoped
     .filter(entry => entry.scope?.startsWith('support.class.node'))
     .map(entry => entry.pattern);
   const missedKinds = allKinds.filter(word => !nodePatterns.some(pattern => pattern.test(word)));
-  check(allKinds.length === 32 && missedKinds.length === 0,
-    'JetBrains 32 primitive kinds highlighted', `${allKinds.length} kinds`);
+  const nodeKindAlternation = grammar.repository?.['node-kinds']?.match ?? '';
+  const alternationCount = (nodeKindAlternation.match(/\|/g) || []).length + (nodeKindAlternation ? 1 : 0);
+  check(missedKinds.length === 0 && alternationCount >= 100,
+    'JetBrains full primitive kinds highlighted', `${alternationCount} kinds`);
 
   const stringRule = grammar.repository?.strings;
   const stringPatterns = Array.isArray(stringRule?.patterns) ? stringRule.patterns : [];
