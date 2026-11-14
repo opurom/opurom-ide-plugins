@@ -359,7 +359,8 @@ export function validateJetbrains(check = defaultCheck, rootDir = defaultRoot) {
     .filter(entry => entry.scope !== 'variable.other.identifier.opurom')
     .map(entry => entry.pattern);
   const languageKeywords = [
-    'app', 'state', 'model', 'api', 'theme', 'import', 'async', 'await', 'if', 'for',
+    'app', 'state', 'model', 'api', 'theme', 'import', 'component', 'computed',
+    'page', 'push', 'if', 'else', 'for', 'in', 'async', 'await',
     'list', 'get', 'create', 'update', 'delete', 'primary', 'delay', 'fetch',
     'spring', 'ease', 'glass', 'gradient', 'shadow', 'opacity', 'animate',
     'true', 'false'

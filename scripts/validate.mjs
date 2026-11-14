@@ -122,8 +122,10 @@ check(uncovered.length === 0, 'grammar token coverage', `${tokenChecks.length} t
 // Language keywords and node kinds must be highlighted as something more
 // specific than a plain identifier.
 const languageKeywords = [
-  'model', 'api', 'theme', 'if', 'for',
-  'list', 'get', 'create', 'update', 'delete', 'primary',
+  'app', 'state', 'model', 'api', 'theme', 'import', 'component', 'computed',
+  'page', 'push', 'if', 'else', 'for', 'in', 'async', 'await',
+  'list', 'get', 'create', 'update', 'delete', 'primary', 'true', 'false',
+  'delay', 'fetch',
   'spring', 'ease', 'glass', 'gradient', 'shadow', 'opacity', 'animate'
 ];
 const extraNodeKinds = [

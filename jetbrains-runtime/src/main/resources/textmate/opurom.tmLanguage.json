@@ -44,7 +44,7 @@
     },
     "keywords": {
       "name": "keyword.control.opurom",
-      "match": "\\b(?:app|state|model|api|theme|import|if|for|async|await)\\b"
+      "match": "\\b(?:app|state|model|api|theme|import|component|computed|page|push|if|else|for|in|async|await)\\b"
     },
     "api-verbs": {
       "name": "keyword.control.verb.opurom",
