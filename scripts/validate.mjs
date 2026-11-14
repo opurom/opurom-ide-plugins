@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { validateJetbrains } from '../jetbrains/validate.mjs';
+import { validateRuntime } from '../jetbrains-runtime/validate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ext = path.join(root, 'vscode-opurom');
@@ -21,7 +22,7 @@ function readJson(relativePath) {
 function walk(dir) {
   const files = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === '.git' || entry.name === 'node_modules') continue;
+    if (['.git', 'node_modules', '.gradle', '.gradle-home', 'build'].includes(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) files.push(...walk(full));
     else files.push(full);
@@ -482,5 +483,6 @@ const ignoreOk = ['.gitignore', 'vscode-opurom/.vscodeignore'].every(relativePat
 check(ignoreOk, 'ignore files', '2 files, 3 patterns each');
 
 validateJetbrains(check, root);
+validateRuntime(check, root);
 
 console.log('PASS opurom-ide-plugins validation');
