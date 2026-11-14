@@ -128,7 +128,13 @@ const languageKeywords = [
 ];
 const extraNodeKinds = [
   'Card', 'Divider', 'Icon', 'Badge', 'Progress', 'Switch', 'Slider', 'Checkbox',
-  'Radio', 'Dialog', 'Tabs', 'List', 'Grid', 'Scroll', 'Avatar', 'Spinner'
+  'Radio', 'Dialog', 'Tabs', 'List', 'Grid', 'Scroll', 'Avatar', 'Spinner',
+  // Extended primitive kinds (charts, meters, inputs) the language also accepts.
+  'Gauge', 'Sparkline', 'PieChart', 'DonutChart', 'Candlestick', 'Heatmap',
+  'Treemap', 'FunnelChart', 'Waveform', 'Breadcrumbs', 'Pagination', 'Stepper',
+  'Sidebar', 'MenuBar', 'Rating', 'Dial', 'Knob', 'DateField', 'TimeField',
+  'SelectBox', 'ComboBox', 'SearchBar', 'UploadZone', 'QrGlyph', 'BarcodeGlyph',
+  'Speedometer', 'Compass', 'ProgressRing', 'KpiTile', 'StatCard', 'BracketPanel'
 ];
 const specificPatterns = scoped
   .filter(entry => entry.scope !== 'variable.other.identifier.opurom')
@@ -148,7 +154,13 @@ const allKinds = [
   'Column', 'Row', 'Container', 'Text', 'Button', 'Input', 'Image', 'Spacer', ...extraNodeKinds
 ];
 const kindMisses = allKinds.filter(word => !nodePatterns.some(pattern => pattern.test(word)));
-check(kindMisses.length === 0, 'all 24 node kinds highlighted', `${allKinds.length} kinds`);
+check(kindMisses.length === 0, 'all node kinds highlighted', `${allKinds.length} kinds`);
+
+// The grammar's node-kinds alternation must list every language kind, so a
+// primitive the compiler accepts is never shown as a plain identifier.
+const nodeKindAlternation = grammar.repository['node-kinds']?.match ?? '';
+const alternationCount = (nodeKindAlternation.match(/\|/g) || []).length + (nodeKindAlternation ? 1 : 0);
+check(alternationCount >= 100, 'node-kinds alternation covers the full primitive set', `${alternationCount} kinds`);
 
 const stringPatterns = grammar.repository.strings.patterns;
 const interpolation = stringPatterns.find(pattern => pattern.name === 'meta.interpolation.opurom');
