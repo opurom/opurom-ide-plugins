@@ -70,5 +70,32 @@
       "$0"
     ],
     "description": "Insert a theme block with mode, accent and radius"
+  },
+  "Conditional if": {
+    "prefix": "if",
+    "body": [
+      "if (${1:state}) {",
+      "\t${2:Text(\"Visible\")}",
+      "}",
+      "$0"
+    ],
+    "description": "Insert a conditional rendering block"
+  },
+  "Conditional if/else": {
+    "prefix": "ifelse",
+    "body": [
+      "if (${1:state}) {",
+      "\t${2:Text(\"Visible\")}",
+      "} else {",
+      "\t${3:Text(\"Hidden\")}",
+      "}",
+      "$0"
+    ],
+    "description": "Insert conditional rendering with both branches"
+  },
+  "Default theme": {
+    "prefix": "theme",
+    "body": ["theme { accent: \"#097FEB\", radius: 12 }", "$0"],
+    "description": "Insert the default theme block"
   }
 }

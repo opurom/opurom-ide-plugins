@@ -29,7 +29,7 @@ No VSIX is included here. Build `opurom-lang` with `cargo build`, or set `opurom
 
 - Registers the `opurom` language for `.opu` files, with comments, brackets, autoclosing pairs and indentation rules.
 - TextMate syntax highlighting for `//` comments, `app`/`state`/`model`/`api`/`theme`/`if`/`for`, the API verbs `list`/`get`/`create`/`update`/`delete`, the action verbs `set`/`add`/`sub`/`toggle`, the `primary` modifier, the effect words `spring`/`ease`/`glass`/`gradient`/`shadow`/`opacity`, the `animate`/`fontScale` attribute names, all 24 node kinds, prop names, numbers, strings, booleans, `{name}` interpolation, literal `{{`, `+=`, `-=`, `=`, `.toggle()`, and punctuation.
-- Snippets: `opurom-app`, `opurom-column-text`, `opurom-button-inc`, `opurom-input-bind`, `opurom-fullstack` (a `model` plus two `api` blocks), `opurom-theme`.
+- Snippets: `opurom-app`, `opurom-column-text`, `opurom-button-inc`, `opurom-input-bind`, `opurom-fullstack` (a `model` plus two `api` blocks), `opurom-theme`, `if` and `ifelse` conditional rendering, and `theme` (the canonical accent and radius).
 - `opurom.compile` runs `opuromc compile <src> -o <name>.opuir.json`.
 - `opurom.check` runs `opuromc check <src>`; if `opurom.cliPath` is set, it runs `node <cliPath> check <src>` instead.
 - `opurom.showActiveDocumentInfo` reports the active `.opu` filename and line count, and a clear message when no `.opu` editor is active.
@@ -84,7 +84,7 @@ node scripts/validate.mjs
 node --test
 ```
 
-`scripts/validate.mjs` checks that every contributed command has a registered handler. `test/extension-commands.test.mjs` covers the command declarations and behavior, and `test/lsp-client.test.mjs` covers the client restart lifecycle.
+`scripts/validate.mjs` checks that every contributed command has a registered handler. `test/extension-commands.test.mjs` covers the command declarations and behavior, `test/lsp-client.test.mjs` covers the client restart lifecycle, and `test/grammar-tokenization.test.mjs` checks the shared conditional and theme snippet bodies across all three grammars.
 
 ## Status
 

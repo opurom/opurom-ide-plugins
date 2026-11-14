@@ -3,7 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { validateJetbrains } from '../jetbrains/validate.mjs';
+import { validateJetbrains, readLiveTemplates, expandJetBrains, expandVsCode } from '../jetbrains/validate.mjs';
 import { validateRuntime } from '../jetbrains-runtime/validate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -181,7 +181,8 @@ const snippetText = JSON.stringify(snippets);
 const snippetOk = snippetEntries.length >= 5 &&
   snippetEntries.every(entry => entry.prefix && Array.isArray(entry.body) && entry.description) &&
   ['opurom-app', 'Column', 'Text', 'Button', '+= 1', 'Input', 'bind:',
-    'opurom-fullstack', 'model', 'api', 'primary'].every(token => snippetText.includes(token));
+    'opurom-fullstack', 'model', 'api', 'primary', 'if (', 'ifelse', '} else {',
+    '#097FEB', 'radius: 12'].every(token => snippetText.includes(token));
 check(snippetOk, 'snippets', `${snippetEntries.length} snippets`);
 const fullstackSnippet = snippetEntries.find(entry => entry.prefix === 'opurom-fullstack');
 const scaffoldOk = Boolean(
@@ -191,6 +192,33 @@ const scaffoldOk = Boolean(
   fullstackSnippet.body.some(line => line.includes('list ${2:Todo}'))
 );
 check(scaffoldOk, 'full-stack snippet scaffold', 'model + api + handlers');
+
+const conditionalPrefixes = ['if', 'ifelse', 'theme'];
+const conditionalSnippets = conditionalPrefixes.map(prefix =>
+  snippetEntries.find(entry => entry.prefix === prefix)
+);
+const canonicalSnippets = conditionalSnippets.map(snippet => snippet && expandVsCode(snippet.body));
+const liveTemplates = readLiveTemplates(root);
+const canonicalTemplates = conditionalPrefixes.map(prefix => {
+  const template = liveTemplates.get(prefix);
+  return template && expandJetBrains(template);
+});
+const conditionalOk = conditionalSnippets.every(Boolean) &&
+  conditionalSnippets[0].body.some(line => line.includes('if (${1:state}) {')) &&
+  conditionalSnippets[0].body.some(line => line.includes('${2:')) &&
+  conditionalSnippets[1].body.some(line => line.includes('} else {')) &&
+  conditionalSnippets[1].body.some(line => line.includes('${3:')) &&
+  canonicalSnippets.every((body, index) => body === canonicalTemplates[index]) &&
+  canonicalSnippets[0] === ['if (state) {', '\tText("Visible")', '}'].join('\n') &&
+  canonicalSnippets[1] === [
+    'if (state) {',
+    '\tText("Visible")',
+    '} else {',
+    '\tText("Hidden")',
+    '}'
+  ].join('\n') &&
+  canonicalSnippets[2] === 'theme { accent: "#097FEB", radius: 12 }';
+check(conditionalOk, 'conditional snippets', `${conditionalPrefixes.length} consistent VS Code and JetBrains bodies`);
 
 const versionParts = String(pkg.version || '').split('.');
 const contributes = pkg.contributes || {};
@@ -449,7 +477,8 @@ const docPhrases = [
   'completion',
   'definition',
   'contributes.debuggers',
-  'DAP subset'
+  'DAP subset',
+  'conditional rendering'
 ];
 const docsOk = readmePaths.every(relativePath => {
   const text = readmeText.get(relativePath).toLowerCase();
