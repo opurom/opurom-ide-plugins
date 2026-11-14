@@ -245,7 +245,8 @@ test('conditional snippets include tab stops, both branches and the default them
 
 test('every VS Code snippet has a JetBrains live template with the same body', () => {
   const prefixes = ['if', 'ifelse', 'theme', 'opurom-app', 'opurom-column-text',
-    'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme'];
+    'opurom-button-inc', 'opurom-input-bind', 'opurom-fullstack', 'opurom-theme',
+    'opurom-particles'];
   for (const prefix of prefixes) {
     const entry = Object.values(vscodeSnippets).find(snippet => snippet.prefix === prefix);
     assert.ok(entry, `${prefix} VS Code snippet exists`);
@@ -277,4 +278,22 @@ for (const [label, relativePath] of grammars) {
 test('all three grammars agree on the conditional snippet stream', () => {
   const streams = grammars.map(([, relativePath]) => tokenize(load(relativePath), conditionalSource));
   for (const stream of streams.slice(1)) assert.deepEqual(stream, streams[0]);
+});
+
+test('the particles snippet keeps its seeded field prop and animation in every grammar', () => {
+  const entry = Object.values(vscodeSnippets).find(snippet => snippet.prefix === 'opurom-particles');
+  assert.ok(entry, 'opurom-particles VS Code snippet exists');
+  const body = entry.body.join('\n');
+  assert.match(body, /particles: "count=\$\{4:64\},seed=\$\{5:7\},radius=\$\{6:3\}"/);
+  assert.match(body, /animate: \$\{3\|spring,ease,none\|\}/);
+  const expanded = expandVsCode(entry.body);
+  assert.match(expanded, /particles: "count=64,seed=7,radius=3"/);
+  assert.match(expanded, /animate: spring/);
+  for (const [label, relativePath] of grammars) {
+    const tokens = tokenize(load(relativePath), expanded);
+    const prop = tokens.find(token => token.text === 'particles');
+    assert.equal(prop?.scope, 'variable.parameter.prop.opurom', `${label} particles prop`);
+    const effect = tokens.find(token => token.text === 'spring');
+    assert.equal(effect?.scope, 'support.constant.effect.opurom', `${label} spring effect`);
+  }
 });
