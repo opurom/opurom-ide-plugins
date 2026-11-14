@@ -10,6 +10,7 @@
     { "include": "#model-modifiers" },
     { "include": "#async-effects" },
     { "include": "#node-kinds" },
+    { "include": "#component-aliases" },
     { "include": "#numbers" },
     { "include": "#booleans" },
     { "include": "#operators" },
@@ -57,6 +58,10 @@
     "async-effects": {
       "name": "support.function.async-effect.opurom",
       "match": "\\b(?:delay|fetch)\\b"
+    },
+    "component-aliases": {
+      "name": "support.class.node.opurom",
+      "match": "\\b[A-Z][A-Za-z0-9_]*(?=\\s*\\()"
     },
     "node-kinds": {
       "name": "support.class.node.opurom",
