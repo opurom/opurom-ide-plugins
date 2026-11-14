@@ -12,6 +12,7 @@
     { "include": "#numbers" },
     { "include": "#booleans" },
     { "include": "#operators" },
+    { "include": "#attribute-names" },
     { "include": "#property-names" },
     { "include": "#effects" },
     { "include": "#identifiers" },
@@ -46,7 +47,7 @@
     },
     "api-verbs": {
       "name": "keyword.control.verb.opurom",
-      "match": "\\b(?:list|get|create|update|delete)\\b"
+      "match": "\\b(?:list|get|create|update|delete|set|add|sub|toggle)\\b"
     },
     "model-modifiers": {
       "name": "storage.modifier.opurom",
@@ -68,13 +69,17 @@
       "name": "keyword.operator.opurom",
       "match": "\\+=|-=|=(?!=)|\\.toggle\\(\\)"
     },
+    "attribute-names": {
+      "name": "variable.parameter.attribute.opurom",
+      "match": "\\b(?:animate|fontScale)\\b"
+    },
     "property-names": {
       "name": "variable.parameter.prop.opurom",
       "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*:)"
     },
     "effects": {
       "name": "support.constant.effect.opurom",
-      "match": "\\b(?:spring|ease|glass|gradient|shadow|opacity|animate)\\b"
+      "match": "\\b(?:spring|ease|glass|gradient|shadow|opacity)\\b"
     },
     "identifiers": {
       "name": "variable.other.identifier.opurom",
