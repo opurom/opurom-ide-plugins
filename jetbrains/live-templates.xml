@@ -84,4 +84,10 @@
       <option name="OPUROM" value="true" />
     </context>
   </template>
+  <template name="opurom-feedback-overlay" value="$COMPONENT$()$END$" description="Insert a feedback or overlay catalog component" toReformat="false" toShortenFQNames="false">
+    <variable name="COMPONENT" expression="" defaultValue="Confirm" alwaysStopAt="true" />
+    <context>
+      <option name="OPUROM" value="true" />
+    </context>
+  </template>
 </templateSet>

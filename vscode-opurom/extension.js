@@ -5,7 +5,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { LspClient, defaultLspPath } = require('./lsp-client');
-const { createHoverProvider, generateHoverCard } = require('./hover-cards');
+const { createHoverProvider, generateHoverCard, generatePropHoverCard } = require('./hover-cards');
 
 const DIAGNOSTIC_RE = /^(.+?):(\d+):(\d+):\s*(error|warning):\s*(.+)$/;
 
@@ -372,5 +372,6 @@ module.exports = {
   runAndDebug,
   toolFor,
   createHoverProvider,
-  generateHoverCard
+  generateHoverCard,
+  generatePropHoverCard
 };

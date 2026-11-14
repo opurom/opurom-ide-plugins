@@ -108,5 +108,13 @@
     "prefix": "theme",
     "body": ["theme { accent: \"#097FEB\", radius: 12 }", "$0"],
     "description": "Insert the default theme block"
+  },
+  "Feedback or overlay component": {
+    "prefix": "opurom-feedback-overlay",
+    "body": [
+      "${1|Confirm,Drawer,Toast,SuccessToast,WarningToast,ErrorToast,Tooltip,HoverTooltip,Notification,Badge,StatusBadge,ProgressBar,Progress,RadialProgress,Spinner,LoadingSpinner,Skeleton,SkeletonCard,Avatar,StatusAvatar|}()",
+      "$0"
+    ],
+    "description": "Insert a feedback or overlay catalog component"
   }
 }

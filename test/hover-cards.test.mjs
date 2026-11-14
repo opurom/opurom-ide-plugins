@@ -9,12 +9,19 @@ const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ext = path.join(root, 'vscode-opurom');
 const hoverCardsPath = path.join(ext, 'hover-cards.js');
-const { catalog, componentNames, generateHoverCard } = require(hoverCardsPath);
+const { catalog, componentNames, designProps, generateHoverCard, generatePropHoverCard } = require(hoverCardsPath);
 const extension = require(path.join(ext, 'extension.js'));
 const pkg = require(path.join(ext, 'package.json'));
+const snippets = require(path.join(ext, 'snippets/opurom.json'));
 const entries = new Map(catalog.components.map(
   ([name, primitive, category, defaultProps]) => [name, { name, primitive, category, defaultProps }]
 ));
+const feedbackOverlayNames = [
+  'Confirm', 'Drawer', 'Toast', 'SuccessToast', 'WarningToast', 'ErrorToast',
+  'Tooltip', 'HoverTooltip', 'Notification', 'Badge', 'StatusBadge',
+  'ProgressBar', 'Progress', 'RadialProgress', 'Spinner', 'LoadingSpinner',
+  'Skeleton', 'SkeletonCard', 'Avatar', 'StatusAvatar'
+];
 
 class FakeMarkdownString {
   constructor(value) {
@@ -29,11 +36,12 @@ class FakeHover {
   }
 }
 
-test('all 240 catalog names produce a complete component hover card', () => {
-  assert.equal(catalog.count, 240);
-  assert.equal(catalog.components.length, 240);
-  assert.equal(componentNames.length, 240);
-  assert.equal(new Set(componentNames).size, 240);
+test('all 260 catalog names produce a complete component hover card', () => {
+  assert.equal(catalog.count, 260);
+  assert.equal(catalog.components.length, 260);
+  assert.equal(componentNames.length, 260);
+  assert.equal(new Set(componentNames).size, 260);
+  assert.deepEqual(componentNames.slice(240), feedbackOverlayNames);
 
   for (const name of componentNames) {
     const entry = entries.get(name);
@@ -97,6 +105,55 @@ test('hover cards are byte-identical across separate runs', () => {
   assert.ok(first.stdout.equals(second.stdout), 'two fresh processes produce identical bytes');
 });
 
+test('design-system prop hover cards document values, defaults, errors and usage', () => {
+  const propNames = Object.keys(designProps);
+  const grammar = Object.entries(designProps).map(
+    ([prop, { values }]) => `\`${prop}: ${values.join('|')}\``
+  );
+  const defaults = Object.values(designProps).map(
+    ({ defaultValue }) => `default \`${defaultValue}\``
+  );
+  const usage = [
+    '```opu',
+    'app Preview {',
+    '  Button("Save", state: hover, variant: primary, tone: info)',
+    '}',
+    '```'
+  ].join('\n');
+  assert.deepEqual(propNames, ['state', 'variant', 'tone']);
+
+  for (const name of propNames) {
+    const card = generatePropHoverCard(name);
+    assert.ok(card, `${name} has a design-system card`);
+    assert.ok(card.startsWith(`## ${name}\n`), `${name} has a prop heading`);
+    assert.ok(!card.includes('\r'), `${name} uses LF newlines`);
+    for (const line of [...grammar, ...defaults]) {
+      assert.ok(card.includes(line), `${name} documents ${line}`);
+    }
+    for (const { values } of Object.values(designProps)) {
+      for (const value of values) assert.ok(card.includes(value), `${name} documents ${value}`);
+    }
+    assert.match(card, /Unknown values are compile-time errors/);
+    assert.ok(card.includes(usage), `${name} has the OPUROM usage snippet`);
+    assert.equal(generatePropHoverCard(name), card, `${name} is deterministic within a run`);
+    assert.equal(generateHoverCard(name), null, `${name} is not a component card`);
+  }
+  for (const value of Object.values(designProps).flatMap(({ values }) => values)) {
+    assert.ok(generatePropHoverCard(value), `${value} surfaces its prop card`);
+  }
+  for (const name of ['NotAProp', '', null, undefined, 42, 'pressed']) {
+    assert.equal(generatePropHoverCard(name), null, `${String(name)} has no prop card`);
+  }
+});
+
+test('feedback/overlay completion snippet offers all 20 new catalog names', () => {
+  const snippet = Object.values(snippets).find(entry => entry.prefix === 'opurom-feedback-overlay');
+  assert.ok(snippet, 'the existing snippet contribution covers the new family');
+  const choices = /\$\{1\|([^|]+)\|\}/.exec(snippet.body.join('\n'));
+  assert.ok(choices, 'the snippet has a completion choice');
+  assert.deepEqual(choices[1].split(','), feedbackOverlayNames);
+});
+
 test('activation registers an opurom hover provider that surfaces the generated card', () => {
   assert.ok(pkg.activationEvents.includes('onLanguage:opurom'));
   const registrations = [];
@@ -144,4 +201,16 @@ test('activation registers an opurom hover provider that surfaces the generated 
   assert.deepEqual(hover.range, range);
   assert.ok(hover.contents[0] instanceof FakeMarkdownString);
   assert.equal(hover.contents[0].value, generateHoverCard('VStack'));
+  for (const word of ['state', 'variant', 'tone', 'hover', 'primary', 'info']) {
+    const propHover = registrations[0].provider.provideHover({
+      getWordRangeAtPosition: () => range,
+      getText: () => word
+    }, { line: 0, character: 0 });
+    assert.ok(propHover instanceof FakeHover, `${word} uses the same hover provider`);
+    assert.equal(propHover.contents[0].value, generatePropHoverCard(word));
+  }
+  assert.equal(registrations[0].provider.provideHover({
+    getWordRangeAtPosition: () => range,
+    getText: () => 'pressed'
+  }, {}), null);
 });
