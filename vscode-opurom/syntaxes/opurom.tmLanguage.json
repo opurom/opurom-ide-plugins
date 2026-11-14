@@ -51,7 +51,7 @@
       "match": "\\b(?:list|get|create|update|delete|set|add|sub|toggle)\\b"
     },
     "async-effects": {
-      "name": "keyword.control.effect.opurom",
+      "name": "support.function.async-effect.opurom",
       "match": "\\b(?:delay|fetch)\\b"
     },
     "model-modifiers": {

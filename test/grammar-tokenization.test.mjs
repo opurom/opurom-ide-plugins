@@ -181,7 +181,7 @@ const snippetExpected = [
   t('"Visible"', 'string.quoted.double.opurom'),
   t(')', 'punctuation.opurom'),
   t('}', 'punctuation.opurom'),
-  t('else', 'variable.other.identifier.opurom'),
+  t('else', 'keyword.control.opurom'),
   t('{', 'punctuation.opurom'),
   t('Text', 'support.class.node.opurom'),
   t('(', 'punctuation.opurom'),
@@ -279,6 +279,39 @@ test('all three grammars agree on the conditional snippet stream', () => {
   const streams = grammars.map(([, relativePath]) => tokenize(load(relativePath), conditionalSource));
   for (const stream of streams.slice(1)) assert.deepEqual(stream, streams[0]);
 });
+
+// Every language keyword must be a keyword token in every grammar, not a plain
+// identifier: this guards the declaration and navigation syntax added later.
+const keywordSource = [
+  'app Demo {',
+  '  import "common.opu"',
+  '  component Badge { }',
+  '  computed doubled = count',
+  '  page Home;',
+  '  page Settings;',
+  '  if (count > 0) { Button("Go") { push: Settings } } else { Text("none") }',
+  '  for item in items { Text(item) }',
+  '  async { await get("/x") }',
+  '}'
+].join('\n');
+const keywordWords = new Set([
+  'app', 'import', 'component', 'computed', 'page', 'push', 'if', 'else', 'for', 'in', 'async', 'await'
+]);
+for (const [label, relativePath] of grammars) {
+  test(`${label} grammar tokenizes every language keyword`, () => {
+    const scopeByWord = new Map();
+    for (const { text, scope } of tokenize(load(relativePath), keywordSource)) {
+      if (keywordWords.has(text)) scopeByWord.set(text, scope);
+    }
+    for (const word of keywordWords) {
+      assert.equal(
+        scopeByWord.get(word),
+        'keyword.control.opurom',
+        `${label}: ${word} must be a keyword`
+      );
+    }
+  });
+}
 
 test('the particles snippet keeps its seeded field prop and animation in every grammar', () => {
   const entry = Object.values(vscodeSnippets).find(snippet => snippet.prefix === 'opurom-particles');
