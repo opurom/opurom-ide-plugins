@@ -151,8 +151,8 @@ const languageKeywords = [
   'app', 'state', 'model', 'api', 'theme', 'import', 'component', 'computed',
   'page', 'push', 'if', 'else', 'for', 'in', 'async', 'await',
   'list', 'get', 'create', 'update', 'delete', 'primary', 'true', 'false',
-  'delay', 'fetch',
-  'spring', 'ease', 'glass', 'gradient', 'shadow', 'opacity', 'animate'
+  'delay', 'fetch', 'validate',
+  'spring', 'ease', 'inertia', 'collision', 'glass', 'gradient', 'shadow', 'opacity', 'animate'
 ];
 const extraNodeKinds = [
   'Card', 'Divider', 'Icon', 'Badge', 'Progress', 'Switch', 'Slider', 'Checkbox',

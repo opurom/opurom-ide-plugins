@@ -48,7 +48,7 @@
     },
     "api-verbs": {
       "name": "keyword.control.verb.opurom",
-      "match": "\\b(?:list|get|create|update|delete|set|add|sub|toggle)\\b"
+      "match": "\\b(?:list|get|create|update|delete|set|add|sub|toggle|validate)\\b"
     },
     "async-effects": {
       "name": "support.function.async-effect.opurom",
@@ -84,7 +84,7 @@
     },
     "effects": {
       "name": "support.constant.effect.opurom",
-      "match": "\\b(?:spring|ease|glass|gradient|shadow|opacity)\\b"
+      "match": "\\b(?:spring|ease|inertia|collision|glass|gradient|shadow|opacity)\\b"
     },
     "identifiers": {
       "name": "variable.other.identifier.opurom",
