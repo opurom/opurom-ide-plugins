@@ -360,3 +360,33 @@ test('all three grammars highlight the form verb and animate curves', () => {
     }
   }
 });
+
+// The component-alias rule highlights any capitalized node call, so the 187
+// source aliases (VStack, SuccessToast, StatusBadge, ...) need no static list
+// and cannot drift when the language catalog grows. It must stay narrow enough
+// that declarations like `app Demo` and `page Home` remain plain identifiers.
+test('all three grammars highlight catalog aliases without capturing declarations', () => {
+  const source = [
+    'app Demo {',
+    '  page Home;',
+    '  model User { }',
+    '  VStack(p: 8) {',
+    '    SuccessToast()',
+    '    StatusBadge(label: "OK")',
+    '    SkeletonCard()',
+    '  }',
+    '}'
+  ].join('\n');
+  for (const [label, relativePath] of grammars) {
+    const tokens = tokenize(load(relativePath), source);
+    const scopeOf = (word) => tokens.find(t => t.text === word)?.scope;
+    for (const alias of ['VStack', 'SuccessToast', 'StatusBadge', 'SkeletonCard']) {
+      assert.equal(scopeOf(alias), 'support.class.node.opurom',
+        `${label}: ${alias} must be a node kind`);
+    }
+    for (const plain of ['Demo', 'Home', 'User']) {
+      assert.equal(scopeOf(plain), 'variable.other.identifier.opurom',
+        `${label}: ${plain} must stay an identifier`);
+    }
+  }
+});
