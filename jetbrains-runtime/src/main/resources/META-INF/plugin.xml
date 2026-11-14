@@ -3,6 +3,7 @@
   <id>opurom.jetbrains.runtime</id>
   <name>OPUROM</name>
   <vendor url="https://github.com/opurom">OPUROM</vendor>
+  <icon>META-INF/pluginIcon.png</icon>
   <idea-version since-build="233" until-build="243.*"/>
   <description><![CDATA[Compiled OPUROM language, .opu file type, syntax grammar and stdio LSP client. The grammar resource is textmate/opurom.tmLanguage.json. The startup activity opens a real LSP session; the Java protocol client is tested outside the IDE.]]></description>
   <depends>com.intellij.modules.platform</depends>
