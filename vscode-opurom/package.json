@@ -62,6 +62,12 @@
           "default": "",
           "scope": "machine",
           "description": "Absolute path to opurom-cli/bin/opurom.mjs. Empty uses opuromc check."
+        },
+        "opurom.lspPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path to opurom-lsp/bin/server.mjs. Empty uses ../opurom-lsp/bin/server.mjs."
         }
       }
     }
