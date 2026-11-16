@@ -108,9 +108,13 @@ test('showActiveDocumentInfo reports a clear message without an active .opu edit
 
 test('restartLanguageServer restarts the client and replays the LSP session', () => {
   const calls = [];
+  const initParams = [];
   const client = {
     restart: () => calls.push('restart'),
-    request: method => calls.push(`request:${method}`),
+    request: (method, params) => {
+      calls.push(`request:${method}`);
+      initParams.push(params);
+    },
     notify: method => calls.push(`notify:${method}`)
   };
   const vscode = fakeVscode(null);
@@ -136,6 +140,11 @@ test('restartLanguageServer restarts the client and replays the LSP session', ()
     'notify:initialized',
     'notify:textDocument/didOpen'
   ]);
+  // The handshake declares exactly the features the providers consume.
+  assert.deepEqual(
+    Object.keys(initParams[0].capabilities.textDocument).sort(),
+    ['completion', 'definition', 'hover']
+  );
   assert.deepEqual(vscode.messages, ['Opurom language server restarted.']);
 });
 

@@ -5,6 +5,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { LspClient, defaultLspPath } = require('./lsp-client');
+const { registerLspFeatures } = require('./lsp-features');
 const { createHoverProvider, generateHoverCard, generatePropHoverCard } = require('./hover-cards');
 
 const DIAGNOSTIC_RE = /^(.+?):(\d+):(\d+):\s*(error|warning):\s*(.+)$/;
@@ -197,7 +198,16 @@ function initializeLspSession(vscode, client) {
   client.request('initialize', {
     processId: process.pid,
     rootUri: vscode.workspace.workspaceFolders?.[0]?.uri.toString() || null,
-    capabilities: {}
+    // Declares the features this session consumes: completion, hover and
+    // definition. The server answers them regardless, but an empty handshake
+    // hides what the editor actually wired.
+    capabilities: {
+      textDocument: {
+        completion: {},
+        hover: {},
+        definition: {}
+      }
+    }
   });
   client.notify('initialized', {});
   for (const document of vscode.workspace.textDocuments) {
@@ -291,6 +301,7 @@ function startLanguageServer(vscode, context, output, diagnostics) {
   );
 
   initializeLspSession(vscode, client);
+  registerLspFeatures(vscode, context, client);
   output.appendLine(`Opurom language server started: ${serverPath}`);
 
   return client;

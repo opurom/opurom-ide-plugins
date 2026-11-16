@@ -440,6 +440,33 @@ const lspMarkers = [
 const lspOk = lspMarkers.every(marker => extensionSrc.includes(marker));
 check(lspOk, 'extension.js LSP wiring', 'spawn, didOpen/didChange, diagnostics, shutdown');
 
+// Editor-side providers consume the server's completion, hover and definition
+// answers; the new file must stay syntax-clean and free of editor imports.
+const featuresPath = path.join(ext, 'lsp-features.js');
+const featuresSrc = fs.readFileSync(featuresPath, 'utf8');
+const featuresSyntax = spawnSync(process.execPath, ['--check', featuresPath], { encoding: 'utf8' });
+check(
+  featuresSyntax.status === 0,
+  'lsp-features.js syntax (node --check)',
+  featuresSyntax.stderr.trim() || 'no syntax errors'
+);
+const featureMarkers = [
+  "'textDocument/completion'",
+  "'textDocument/hover'",
+  "'textDocument/definition'",
+  'registerCompletionItemProvider',
+  'registerHoverProvider',
+  'registerDefinitionProvider'
+];
+check(
+  featureMarkers.every(marker => featuresSrc.includes(marker)) &&
+    extensionSrc.includes('registerLspFeatures(vscode, context, client)') &&
+    !/require\(['"]vscode-languageserver/.test(featuresSrc) &&
+    !featuresSrc.includes("require('vscode')"),
+  'editor providers consume completion, hover and definition',
+  'registered against the spawned language server'
+);
+
 const expectedLsp = path.resolve(root, '..', 'opurom-lsp', 'bin', 'server.mjs');
 const extension = require(extensionPath);
 const debugMarkers = [
