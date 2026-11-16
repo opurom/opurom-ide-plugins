@@ -74,3 +74,28 @@ test('Java LSP client frames didOpen/didChange and parses diagnostics', { skip }
   assert.match(record, /textDocument\/didOpen/);
   assert.match(record, /textDocument\/didChange/);
 });
+
+test('jdkTool prefers OPUROM_JAVA over JAVA_HOME and then PATH', () => {
+  const base = path.join(root, 'jetbrains-runtime', 'build', 'test');
+  const primary = path.join(base, 'jdk-primary');
+  const secondary = path.join(base, 'jdk-secondary');
+  for (const home of [primary, secondary]) {
+    fs.mkdirSync(path.join(home, 'bin'), { recursive: true });
+    fs.writeFileSync(path.join(home, 'bin', 'javac'), '');
+  }
+  const saved = { OPUROM_JAVA: process.env.OPUROM_JAVA, JAVA_HOME: process.env.JAVA_HOME };
+  try {
+    process.env.OPUROM_JAVA = primary;
+    process.env.JAVA_HOME = secondary;
+    assert.equal(jdkTool('javac'), path.join(primary, 'bin', 'javac'));
+    process.env.OPUROM_JAVA = '';
+    assert.equal(jdkTool('javac'), path.join(secondary, 'bin', 'javac'));
+    process.env.JAVA_HOME = '';
+    assert.equal(jdkTool('javac'), 'javac');
+  } finally {
+    for (const key of ['OPUROM_JAVA', 'JAVA_HOME']) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  }
+});

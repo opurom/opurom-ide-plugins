@@ -35,10 +35,10 @@ export JAVA_HOME=<your JDK 21 home>
 gradle --no-daemon buildPlugin
 ```
 
-The fallback builder reads the same JDK 21 toolchain from `OPR_JDK_HOME` or `JAVA_HOME`:
+The fallback builder reads the same JDK 21 toolchain from `OPUROM_JAVA` or `JAVA_HOME`:
 
 ```sh
-export OPR_JDK_HOME=<your JDK 21 home>
+export OPUROM_JAVA=<your JDK 21 home>
 node build.mjs
 ```
 

@@ -31,9 +31,11 @@ jobs:
         with:
           components: rustfmt
           targets: wasm32-unknown-unknown
-      # Only the IDE plugin project compiles Java, so only it needs a JDK.
+      # Only the IDE plugin project compiles Java (tests and the validate
+      # rebuild path), so only its jobs need a JDK; setup-java exports the
+      # JAVA_HOME those steps locate the toolchain through.
       - uses: actions/setup-java@v4
-        if: matrix.check == 'node-test' && github.event.repository.name == 'opurom-ide-plugins'
+        if: (matrix.check == 'node-test' || matrix.check == 'validate') && github.event.repository.name == 'opurom-ide-plugins'
         with:
           distribution: temurin
           java-version: '21'
