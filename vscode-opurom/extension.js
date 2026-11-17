@@ -6,6 +6,10 @@ const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { LspClient, defaultLspPath } = require('./lsp-client');
 const { registerLspFeatures } = require('./lsp-features');
+const {
+  createDebugConfigurationProvider,
+  createBreakpointTrackerFactory
+} = require('./debug-bridge');
 const { createHoverProvider, generateHoverCard, generatePropHoverCard } = require('./hover-cards');
 
 const DIAGNOSTIC_RE = /^(.+?):(\d+):(\d+):\s*(error|warning):\s*(.+)$/;
@@ -205,7 +209,14 @@ function initializeLspSession(vscode, client) {
       textDocument: {
         completion: {},
         hover: {},
-        definition: {}
+        definition: {},
+        signatureHelp: {},
+        // Code action objects are accepted; sub-kinds pass through as strings.
+        codeAction: {
+          codeActionLiteralSupport: {
+            codeActionKind: { valueSet: ['quickfix', 'refactor', 'source'] }
+          }
+        }
       }
     }
   });
@@ -358,7 +369,15 @@ function activate(context) {
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterDescriptorFactory('opurom', {
       createDebugAdapterDescriptor: () => debugAdapterDescriptor(vscode)
-    })
+    }),
+    vscode.debug.registerDebugConfigurationProvider(
+      'opurom',
+      createDebugConfigurationProvider(vscode)
+    ),
+    vscode.debug.registerDebugAdapterTrackerFactory(
+      'opurom',
+      createBreakpointTrackerFactory(vscode, output)
+    )
   );
   languageServer = startLanguageServer(vscode, context, output, diagnostics);
 }

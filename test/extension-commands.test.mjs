@@ -143,7 +143,7 @@ test('restartLanguageServer restarts the client and replays the LSP session', ()
   // The handshake declares exactly the features the providers consume.
   assert.deepEqual(
     Object.keys(initParams[0].capabilities.textDocument).sort(),
-    ['completion', 'definition', 'hover']
+    ['codeAction', 'completion', 'definition', 'hover', 'signatureHelp']
   );
   assert.deepEqual(vscode.messages, ['Opurom language server restarted.']);
 });

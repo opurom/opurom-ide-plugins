@@ -28,38 +28,41 @@ test('the client frames messages with Content-Length', () => {
 
 test('the client receives diagnostics from the language server', { skip: !available }, async () => {
   const published = [];
+  const uri = 'file://the temporary checkout-ide-plugins-test/bad.opu';
   const client = new LspClient(serverPath, {
     onDiagnostics: params => published.push(params)
   });
   client.start();
+  try {
+    const initialize = await client.request('initialize', {
+      processId: process.pid,
+      capabilities: {}
+    });
+    assert.equal(initialize.result.capabilities.textDocumentSync, 1);
+    assert.equal(initialize.result.capabilities.hoverProvider, true);
+    assert.equal(initialize.result.capabilities.definitionProvider, true);
+    assert.ok(initialize.result.capabilities.completionProvider);
+    // Diagnostics are push-only; the stale pull capability was withdrawn.
+    assert.equal(initialize.result.capabilities.diagnosticProvider, undefined);
 
-  const initialize = await client.request('initialize', {
-    processId: process.pid,
-    capabilities: {}
-  });
-  assert.equal(initialize.result.capabilities.textDocumentSync, 1);
-  assert.equal(initialize.result.capabilities.hoverProvider, true);
-  assert.equal(initialize.result.capabilities.definitionProvider, true);
-  assert.ok(initialize.result.capabilities.completionProvider);
-  assert.ok(initialize.result.capabilities.diagnosticProvider);
+    client.notify('initialized', {});
 
-  client.notify('initialized', {});
+    client.notify('textDocument/didOpen', {
+      textDocument: {
+        uri,
+        languageId: 'opurom',
+        version: 1,
+        text: 'app Counter {\n  state count = 0\n  Column(gap: 8) { Text("x {nope}") }\n}\n'
+      }
+    });
 
-  const uri = 'file://the temporary checkout-ide-plugins-test/bad.opu';
-  client.notify('textDocument/didOpen', {
-    textDocument: {
-      uri,
-      languageId: 'opurom',
-      version: 1,
-      text: 'app Counter {\n  state count = 0\n  Column(gap: 8) { Text("x {nope}") }\n}\n'
+    const deadline = Date.now() + 10000;
+    while (published.length === 0 && Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
-  });
-
-  const deadline = Date.now() + 10000;
-  while (published.length === 0 && Date.now() < deadline) {
-    await new Promise(resolve => setTimeout(resolve, 50));
+  } finally {
+    client.stop();
   }
-  client.stop();
 
   assert.equal(published.length, 1);
   assert.equal(published[0].uri, uri);

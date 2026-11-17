@@ -176,7 +176,11 @@ test('activation registers an opurom hover provider that surfaces the generated 
       }
     },
     commands: { registerCommand: () => disposable },
-    debug: { registerDebugAdapterDescriptorFactory: () => disposable },
+    debug: {
+      registerDebugAdapterDescriptorFactory: () => disposable,
+      registerDebugConfigurationProvider: () => disposable,
+      registerDebugAdapterTrackerFactory: () => disposable
+    },
     workspace: {
       workspaceFolders: [],
       textDocuments: [],

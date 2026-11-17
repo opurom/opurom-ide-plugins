@@ -312,13 +312,16 @@ const expectedDebug = path.resolve(root, '..', 'opurom-debug', 'bin', 'server.mj
 const debuggerEntry = (contributes.debuggers || []).find(entry => entry.type === 'opurom');
 const launchSchema = debuggerEntry?.configurationAttributes?.launch;
 const launchProperties = launchSchema?.properties || {};
+const breakpointsOk = Array.isArray(contributes.breakpoints) &&
+  contributes.breakpoints.some(entry => entry.language === 'opurom');
+check(breakpointsOk, 'opurom breakpoints contribution', 'language opurom');
 const debuggerOk = Boolean(
   debuggerEntry?.label &&
   debuggerEntry.runtime === 'node' &&
   debuggerEntry.program?.includes('../opurom-debug/bin/server.mjs') &&
   path.resolve(ext, debuggerEntry.program) === expectedDebug &&
   debuggerEntry.languages?.includes('opurom') &&
-  !contributes.breakpoints &&
+  breakpointsOk &&
   launchSchema?.required?.includes('program') &&
   launchProperties.program?.type === 'string' &&
   launchProperties.steps?.type === 'array' &&
@@ -454,17 +457,49 @@ const featureMarkers = [
   "'textDocument/completion'",
   "'textDocument/hover'",
   "'textDocument/definition'",
+  "'textDocument/signatureHelp'",
+  "'textDocument/codeAction'",
   'registerCompletionItemProvider',
   'registerHoverProvider',
-  'registerDefinitionProvider'
+  'registerDefinitionProvider',
+  'registerSignatureHelpProvider',
+  'registerCodeActionsProvider'
 ];
 check(
   featureMarkers.every(marker => featuresSrc.includes(marker)) &&
     extensionSrc.includes('registerLspFeatures(vscode, context, client)') &&
     !/require\(['"]vscode-languageserver/.test(featuresSrc) &&
     !featuresSrc.includes("require('vscode')"),
-  'editor providers consume completion, hover and definition',
+  'editor providers consume completion, hover, definition, signature, code actions',
   'registered against the spawned language server'
+);
+
+// Debug-side editor wiring: launch configs follow the active source file and
+// adapter breakpoint messages are observed for verification/hit reporting.
+const debugBridgePath = path.join(ext, 'debug-bridge.js');
+const debugBridgeSrc = fs.readFileSync(debugBridgePath, 'utf8');
+const debugBridgeSyntax = spawnSync(process.execPath, ['--check', debugBridgePath], { encoding: 'utf8' });
+check(
+  debugBridgeSyntax.status === 0,
+  'debug-bridge.js syntax (node --check)',
+  debugBridgeSyntax.stderr.trim() || 'no syntax errors'
+);
+const debugBridgeMarkers = [
+  'irPathForSource',
+  'provideDebugConfigurations',
+  'resolveDebugConfiguration',
+  'createBreakpointTrackerFactory',
+  "'setBreakpoints'",
+  "'stopped'",
+  "'breakpoint'"
+];
+check(
+  debugBridgeMarkers.every(marker => debugBridgeSrc.includes(marker)) &&
+    extensionSrc.includes('registerDebugConfigurationProvider(') &&
+    extensionSrc.includes('registerDebugAdapterTrackerFactory(') &&
+    !debugBridgeSrc.includes("require('vscode')"),
+  'debug bridge wires launch configs and breakpoint tracking',
+  'current-file program, setBreakpoints verification, stopped hits'
 );
 
 const expectedLsp = path.resolve(root, '..', 'opurom-lsp', 'bin', 'server.mjs');

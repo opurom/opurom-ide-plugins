@@ -42,6 +42,11 @@
         "path": "./snippets/opurom.json"
       }
     ],
+    "breakpoints": [
+      {
+        "language": "opurom"
+      }
+    ],
     "commands": [
       {
         "command": "opurom.compile",
