@@ -26,7 +26,14 @@ test('both editor commands are declared with titles, activation events and handl
     assert.ok(pkg.activationEvents.includes(`onCommand:${id}`), `${id} activates on invocation`);
     assert.ok(extensionSrc.includes(`registerCommand('${id}'`), `${id} is registered`);
   }
-  assert.equal(pkg.contributes.commands.length, 5);
+  // Commands are an open set: every contributed command must be activated and
+  // registered. Pinning a count makes unrelated additions look like failures.
+  const ids = pkg.contributes.commands.map(entry => entry.command);
+  assert.equal(new Set(ids).size, ids.length, 'command ids are unique');
+  for (const id of ids) {
+    assert.ok(pkg.activationEvents.includes(`onCommand:${id}`), `${id} activates on invocation`);
+    assert.ok(extensionSrc.includes(`registerCommand('${id}'`), `${id} is registered`);
+  }
 });
 
 test('the run command is declared, activates and is registered with an F5 binding', () => {
