@@ -109,14 +109,14 @@ const document = {
   getText: () => text
 };
 
-async function withServer(fn) {
+async function withServer(fn, openedText = text) {
   const client = new LspClient(serverPath);
   client.start();
   try {
     const initialize = await client.request('initialize', { processId: process.pid, capabilities: {} });
     client.notify('initialized', {});
     client.notify('textDocument/didOpen', {
-      textDocument: { uri: document.uri.toString(), languageId: 'opurom', version: 1, text }
+      textDocument: { uri: document.uri.toString(), languageId: 'opurom', version: 1, text: openedText }
     });
     await fn(client, initialize);
   } finally {
@@ -165,6 +165,22 @@ test('the definition provider jumps to the declaration location', { skip: !avail
     assert.equal(location.uri.toString(), 'file:///tmp/features.opu');
     assert.equal(location.range.start.character, 8);
   });
+});
+
+test('completion mapping carries the server replacement edit', { skip: !available }, async () => {
+  const propText = 'app Counter {\n  state count = 0\n  Column(padding: ) { Text("hi") }\n}\n';
+  await withServer(async client => {
+    const provider = features.createCompletionProvider(fakeVscode, client);
+    const list = await provider.provideCompletionItems(document, { line: 2, character: 16 });
+    const prop = list.items.find(item => item.label === 'padding');
+    assert.ok(prop, 'prop completion present');
+    assert.equal(prop.filterText, 'padding');
+    assert.equal(prop.sortText, '9000');
+    assert.equal(prop.insertText, 'padding: ');
+    assert.equal(prop.range.start.line, 2);
+    assert.equal(prop.range.start.character, 9);
+    assert.equal(prop.range.end.character, 16);
+  }, propText);
 });
 
 test('the signature help provider maps the enclosing node kind', { skip: !available }, async () => {

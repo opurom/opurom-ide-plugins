@@ -31,6 +31,13 @@ function createCompletionProvider(vscode, client) {
         const entry = new vscode.CompletionItem(item.label, item.kind);
         if (item.detail) entry.detail = item.detail;
         if (item.documentation) entry.documentation = item.documentation;
+        if (item.filterText) entry.filterText = item.filterText;
+        if (item.sortText) entry.sortText = item.sortText;
+        // Replacement range is server-owned: opurom-lsp/lib/features.mjs:212-215.
+        if (item.textEdit && item.textEdit.range && typeof item.textEdit.newText === 'string') {
+          entry.range = toRange(vscode, item.textEdit.range);
+          entry.insertText = item.textEdit.newText;
+        }
         return entry;
       });
       return { isIncomplete: Boolean(result && result.isIncomplete), items };

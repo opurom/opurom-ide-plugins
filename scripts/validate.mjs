@@ -308,6 +308,14 @@ const manifestOk = Boolean(
   !pkg.scripts?.build
 );
 check(manifestOk, 'package.json contributes fields', 'languages, grammars, snippets, commands, settings, debug activation');
+const hotCommands = ['opurom.hotReload', 'opurom.hotRestart', 'opurom.openInspector'];
+check(
+  hotCommands.every(id => commandIds.includes(id)) &&
+    contributes.keybindings?.some(entry => entry.command === 'opurom.hotReload' && /f5/i.test(entry.key)) &&
+    properties['opurom.inspectorUrl']?.type === 'string',
+  'reload and inspector contributions',
+  'Ctrl+F5, dev server inspector setting'
+);
 const expectedDebug = path.resolve(root, '..', 'opurom-debug', 'bin', 'server.mjs');
 const debuggerEntry = (contributes.debuggers || []).find(entry => entry.type === 'opurom');
 const launchSchema = debuggerEntry?.configurationAttributes?.launch;
@@ -463,7 +471,10 @@ const featureMarkers = [
   'registerHoverProvider',
   'registerDefinitionProvider',
   'registerSignatureHelpProvider',
-  'registerCodeActionsProvider'
+  'registerCodeActionsProvider',
+  'item.filterText',
+  'entry.insertText',
+  'entry.range'
 ];
 check(
   featureMarkers.every(marker => featuresSrc.includes(marker)) &&
@@ -500,6 +511,18 @@ check(
     !debugBridgeSrc.includes("require('vscode')"),
   'debug bridge wires launch configs and breakpoint tracking',
   'current-file program, setBreakpoints verification, stopped hits'
+);
+const editorActionMarkers = [
+  'hotRequest(',
+  'customRequest(method)',
+  'openInspector(',
+  'vscode.env.openExternal('
+];
+check(
+  editorActionMarkers.every(marker => extensionSrc.includes(marker)) &&
+    hotCommands.every(id => extensionSrc.includes(`registerCommand('${id}'`)),
+  'editor reload and inspector wiring',
+  'DAP custom requests and dev server page'
 );
 
 const expectedLsp = path.resolve(root, '..', 'opurom-lsp', 'bin', 'server.mjs');

@@ -194,6 +194,47 @@ async function runAndDebug(vscode, output, diagnostics) {
   }
 }
 
+// Editor commands mirror the adapter's reload/restart custom requests.
+// Source: extension 3.148.0-dev, src/extension/commands/debug.ts:285-308.
+async function hotRequest(vscode, output, action) {
+  const session = vscode.debug.activeDebugSession;
+  if (!session || session.type !== 'opurom') {
+    vscode.window.showErrorMessage(`Start an Opurom debug session before a hot ${action}.`);
+    return;
+  }
+  const method = action === 'reload' ? 'hotReload' : 'hotRestart';
+  try {
+    const result = await session.customRequest(method);
+    const version = result && result.version != null ? ` (version ${result.version})` : '';
+    if (result && result.applied) {
+      const message = `Opurom hot ${action} applied${version}.`;
+      output.appendLine(message);
+      vscode.window.showInformationMessage(message);
+      return;
+    }
+    const code = result && result.code ? ` (${result.code})` : '';
+    const message = `Opurom hot ${action} was not applied${code}.`;
+    output.appendLine(message);
+    vscode.window.showErrorMessage(`${message} See the Opurom output channel.`);
+  } catch (error) {
+    const data = error && error.data ? error.data : {};
+    const detail = data.code || (error && error.code) || (error && error.message) || 'unknown error';
+    const message = `Opurom hot ${action} failed: ${detail}`;
+    output.appendLine(message);
+    vscode.window.showErrorMessage(`${message}. See the Opurom output channel.`);
+  }
+}
+
+// The inspector is served by the dev server, not by the debug adapter.
+// Source: opurom-spec/INSPECTOR_DATA_PLANE.md:55-59, dev.mjs:371.
+function openInspector(vscode, output) {
+  const config = vscode.workspace.getConfiguration('opurom');
+  const url = String(config.get('inspectorUrl') || '').trim() ||
+    'http://127.0.0.1:5178/inspector';
+  output.appendLine(`Opurom inspector: ${url}`);
+  vscode.env.openExternal(vscode.Uri.parse(url));
+}
+
 // Holds the running language server for the lifetime of the extension.
 let languageServer = null;
 
@@ -356,7 +397,10 @@ function activate(context) {
     vscode.commands.registerCommand('opurom.showActiveDocumentInfo', () => showActiveDocumentInfo(vscode)),
     vscode.commands.registerCommand('opurom.restartLanguageServer', () =>
       restartLanguageServer(vscode, output, languageServer)
-    )
+    ),
+    vscode.commands.registerCommand('opurom.hotReload', () => hotRequest(vscode, output, 'reload')),
+    vscode.commands.registerCommand('opurom.hotRestart', () => hotRequest(vscode, output, 'restart')),
+    vscode.commands.registerCommand('opurom.openInspector', () => openInspector(vscode, output))
   );
   context.subscriptions.push(
     vscode.languages.registerHoverProvider('opurom', createHoverProvider(vscode))
@@ -400,6 +444,8 @@ module.exports = {
   showActiveDocumentInfo,
   restartLanguageServer,
   runAndDebug,
+  hotRequest,
+  openInspector,
   toolFor,
   createHoverProvider,
   generateHoverCard,

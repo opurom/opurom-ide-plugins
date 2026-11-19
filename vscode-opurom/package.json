@@ -15,6 +15,9 @@
     "onCommand:opurom.run",
     "onCommand:opurom.showActiveDocumentInfo",
     "onCommand:opurom.restartLanguageServer",
+    "onCommand:opurom.hotReload",
+    "onCommand:opurom.hotRestart",
+    "onCommand:opurom.openInspector",
     "onDebug",
     "onDebugResolve:opurom"
   ],
@@ -72,6 +75,21 @@
         "command": "opurom.restartLanguageServer",
         "title": "Restart Opurom language server",
         "category": "Opurom"
+      },
+      {
+        "command": "opurom.hotReload",
+        "title": "Hot reload",
+        "category": "Opurom"
+      },
+      {
+        "command": "opurom.hotRestart",
+        "title": "Hot restart",
+        "category": "Opurom"
+      },
+      {
+        "command": "opurom.openInspector",
+        "title": "Open inspector",
+        "category": "Opurom"
       }
     ],
     "keybindings": [
@@ -79,6 +97,11 @@
         "command": "opurom.run",
         "key": "F5",
         "when": "editorLangId == opurom"
+      },
+      {
+        "command": "opurom.hotReload",
+        "key": "Ctrl+F5",
+        "when": "inDebugMode && debugType == opurom"
       }
     ],
     "debuggers": [
@@ -140,6 +163,12 @@
           "default": "",
           "scope": "machine",
           "description": "Absolute path to opurom-lsp/bin/server.mjs. Empty uses ../opurom-lsp/bin/server.mjs."
+        },
+        "opurom.inspectorUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:5178/inspector",
+          "scope": "window",
+          "description": "Dev server inspector page; run opurom dev to serve it."
         }
       }
     }

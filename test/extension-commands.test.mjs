@@ -153,3 +153,63 @@ test('restartLanguageServer reports when the language server is not running', ()
   extension.restartLanguageServer(vscode, { appendLine: () => {} }, null);
   assert.deepEqual(vscode.messages, ['The Opurom language server is not running.']);
 });
+
+test('hot commands map to DAP custom requests and never fake success', async () => {
+  const lines = [];
+  const messages = [];
+  const calls = [];
+  const session = {
+    type: 'opurom',
+    customRequest: method => {
+      calls.push(method);
+      if (method === 'hotReload') return Promise.resolve({ applied: true, action: 'reload', version: 7 });
+      const failure = new Error('build-error');
+      failure.data = { code: 'build-error', category: 'build-error', retryable: true };
+      return Promise.reject(failure);
+    }
+  };
+  const vscode = {
+    debug: { activeDebugSession: session },
+    window: {
+      showInformationMessage: message => messages.push(['info', message]),
+      showErrorMessage: message => messages.push(['error', message])
+    }
+  };
+  const output = { appendLine: line => lines.push(line) };
+  await extension.hotRequest(vscode, output, 'reload');
+  assert.deepEqual(calls, ['hotReload']);
+  assert.match(lines[0], /hot reload applied \(version 7\)/);
+  assert.equal(messages[0][0], 'info');
+
+  await extension.hotRequest(vscode, output, 'restart');
+  assert.deepEqual(calls, ['hotReload', 'hotRestart']);
+  assert.equal(messages[1][0], 'error');
+  assert.match(messages[1][1], /build-error/);
+  assert.doesNotMatch(lines[1], /applied/);
+});
+
+test('hot commands refuse to run without an Opurom debug session', async () => {
+  const messages = [];
+  const vscode = {
+    debug: { activeDebugSession: { type: 'other' } },
+    window: { showErrorMessage: message => messages.push(message) }
+  };
+  await extension.hotRequest(vscode, { appendLine() {} }, 'reload');
+  assert.equal(messages.length, 1);
+  assert.match(messages[0], /debug session/);
+});
+
+test('inspector opens the configured dev server page', () => {
+  const opened = [];
+  const lines = [];
+  const vscode = {
+    env: { openExternal: uri => opened.push(uri.toString()) },
+    Uri: { parse: value => ({ toString: () => value }) },
+    workspace: {
+      getConfiguration: () => ({ get: key => key === 'inspectorUrl' ? 'http://127.0.0.1:9999/inspector' : '' })
+    }
+  };
+  extension.openInspector(vscode, { appendLine: line => lines.push(line) });
+  assert.deepEqual(opened, ['http://127.0.0.1:9999/inspector']);
+  assert.match(lines[0], /inspector/);
+});
